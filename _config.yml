@@ -13,7 +13,7 @@ title_separator          : "-"
 name                     : &name "Dylan"
 description              : &description "Meow mew"
 url                      : https://mdylantk.github.io # the base hostname & protocol for your site e.g. "https://mmistakes.github.io"
-baseurl                  : "/" # the subpath of your site, e.g. "/blog"
+baseurl                  : "/webpages" # the subpath of your site, e.g. "/blog"
 repository               : "mdylantk/mdylantk.github.io"
 
 # Site Author - The following control what appear as part of the author content on the side bar.
@@ -280,7 +280,13 @@ defaults:
       layout: talk
       author_profile: true
       share: true
-
+  # _webpages
+  - scope:
+      path: ""
+      type: webpages
+    values:
+      layout: webpage
+      author_profile: false
 
 # Sass/SCSS
 sass:
