@@ -1,5 +1,6 @@
 ---
 permalink: /
+layout: webpage
 title: "index"
 author_profile: false
 redirect_from: 
