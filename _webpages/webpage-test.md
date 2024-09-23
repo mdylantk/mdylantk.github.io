@@ -1,9 +1,9 @@
 ---
-permalink: /index
-title: "Index Test"
+permalink: /webpage-test
+title: "webpage-test Test"
 author_profile: false
 redirect_from: 
-  - /index.html
+  - /webpage-test.html
 ---
 
 Meow mew I guess this works now
