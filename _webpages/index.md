@@ -8,4 +8,4 @@ redirect_from:
   - /index.html
 ---
 
-This is a landing page test.
+This may be the landing page. (TODO: move back to pages later since _webpages is redundent and only was made to test)
