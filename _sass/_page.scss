@@ -32,6 +32,8 @@
       @include full();
     }
   }
+  border-style: ridge;
+  background-color: $content-background-color;
 }
 
 .page__title {
