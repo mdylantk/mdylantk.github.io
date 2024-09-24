@@ -1,6 +1,6 @@
 ---
 permalink: /
-layout: webpage
+#layout: webpage
 title: "index"
 author_profile: false
 redirect_from: 
@@ -8,4 +8,4 @@ redirect_from:
   - /index.html
 ---
 
-This may be the landing page. (TODO: move back to pages later since _webpages is redundent and only was made to test)
+Welcome. I am sorry to disappoint but at this time this site primarily used for test to assist in designing sites base on [Academic Pages](https://github.com/academicpages/academicpages.github.io). I will try to update it about myself, but this is not my primary project.
