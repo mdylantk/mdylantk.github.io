@@ -106,7 +106,7 @@
     margin: 0 0 4px;
   }
   border-style: ridge;
-  background-color: $body-color;
+  background-color: $content-background-color;
 }
 
 
@@ -117,7 +117,7 @@
 .grid__item {
   margin-bottom: 2em;
   border-style: ridge;
-  background-color: $body-color;
+  background-color: $content-background-color;
 
   .page__meta {
     margin: 0 0 4px;

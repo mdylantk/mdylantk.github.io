@@ -234,7 +234,8 @@
         left: 0;
         bottom: 0;
         height: 4px;
-        background: mix(#fff, $primary-color, 50%);
+        /*background: mix(#fff, $primary-color, 50%);*/
+        background: $title-background-color;
         width: 100%;
         -webkit-transition: $global-transition;
         transition: $global-transition;
@@ -336,7 +337,7 @@
     margin-left: -0.5em;
     padding-left: 0.5em;
     padding-right: 0.5em;
-    color: #fff;
+    color: $title-background-color;
     font-weight: bold;
     background: $primary-color;
     border-radius: $border-radius;
@@ -376,7 +377,7 @@
   color: $gray;
   text-transform: uppercase;
   letter-spacing: 1px;
-  background-color: #fff;
+  background-color: $title-background-color;
   border: 1px solid $border-color;
   border-radius: $border-radius;
   box-shadow: $box-shadow;
