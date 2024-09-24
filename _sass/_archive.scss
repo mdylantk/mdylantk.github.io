@@ -105,6 +105,8 @@
   .page__meta {
     margin: 0 0 4px;
   }
+  border-style: ridge;
+  background-color: $body-color;
 }
 
 
@@ -114,7 +116,8 @@
 
 .grid__item {
   margin-bottom: 2em;
-  border-style: inset;
+  border-style: ridge;
+  background-color: $body-color;
 
   .page__meta {
     margin: 0 0 4px;
