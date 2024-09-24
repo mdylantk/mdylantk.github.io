@@ -1,3 +1,5 @@
+
+<div style="background-color: coral;"></div>
 {% include base_path %}
 
 {% if post.header.teaser %}
@@ -12,7 +14,7 @@
   {% assign title = post.title %}
 {% endif %}
 
-<div style="background-color: coral;">
+
 <div class="{{ include.type | default: "list" }}__item">
   <article class="archive__item" itemscope itemtype="http://schema.org/CreativeWork">
     {% if include.type == "grid" and teaser %}
