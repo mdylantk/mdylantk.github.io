@@ -15,14 +15,12 @@ layout: default
 <div id="main" role="main">
   {% include sidebar.html %}
 
-  <div class="archive" style="background-color:rgb(255, 0, 191)">
+  <div class="archive">
     {% unless page.header.overlay_color or page.header.overlay_image %}
       <h1 class="page__title">{{ page.title }} </h1>
-    <div style="background-color:rgb(0, 255, 55)">
       {% endunless %}
-      <div style="background-color:blue">
-        {{ content }}
-      </div>
+    <div class="content_container">
+       {{ content }}
     </div>
   </div>
 </div>
