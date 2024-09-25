@@ -90,6 +90,7 @@
    ========================================================================== */
 
 .list__item {
+  /*
   @include breakpoint($medium) {
     padding-right: $right-sidebar-width-narrow;
   }
@@ -101,13 +102,14 @@
   @include breakpoint($x-large) {
     padding-right: $right-sidebar-width-wide;
   }
+  */
 
   .page__meta {
     margin: 0 0 4px;
   }
   border-style: ridge;
   background-color: $content-background-color;
-  padding: 0% 2% 0% 2%;
+  padding: 0% 4% 0% 4%;
 }
 
 
@@ -119,7 +121,7 @@
   margin-bottom: 2em;
   border-style: ridge;
   background-color: $content-background-color;
-  padding: 16px 16px 16px 16px;
+  padding: 4% 4% 4% 4%;
 
   .page__meta {
     margin: 0 0 4px;
