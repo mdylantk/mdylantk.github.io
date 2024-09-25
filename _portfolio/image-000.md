@@ -1,6 +1,6 @@
 ---
 title: "Image-000"
-excerpt: "<br/><img src='/images/Image-000.jpg'>"
+excerpt: "<img src='/images/Image-000.jpg'>"
 collection: portfolio
 ---
 

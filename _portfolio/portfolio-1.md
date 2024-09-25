@@ -13,7 +13,7 @@ This is an item in your portfolio. It can be have images or nice text. If you na
 ![5](/images/Image-005.jpg)
 
 Below is a more stylize test
-<p align="center" style="position: relative;">
+<p align="center" style="position: absolute;">
   <img src="/images/Image-001.jpg" height="150">
   <img src="/images/profile.png" style="top: 64px;left: 64px;">
 </p>
