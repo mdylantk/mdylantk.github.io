@@ -5,3 +5,9 @@ collection: portfolio
 ---
 
 This is an item in your portfolio. It can be have images or nice text. If you name the file .md, it will be parsed as markdown. If you name the file .html, it will be parsed as HTML. 
+![](/images/image-001.png)
+![](/images/image-002.png)
+![](/images/image-003.png)
+![](/images/image-004.png)
+![](/images/image-005.png)
+![](images/image-000.png)
