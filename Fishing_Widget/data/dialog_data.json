@@ -1,0 +1,18 @@
+{
+    "default": {
+        "pet":["*Purrs*"],
+        "pet_bad":["Meow! Not there"],
+        "pet_good":["*Purrs loudly*"]
+    },
+    "cat": {
+        "default":{
+            "pet":["*Purrs*", "*Purrs softly*"]
+        },
+        "happy":{
+            "pet":["*Purrs loudly*"]
+        },
+        "annoyed":{
+            "pet":["*Purrs, but tires to evades you.*"]
+        }
+    }
+}

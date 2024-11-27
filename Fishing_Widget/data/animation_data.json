@@ -1,0 +1,17 @@
+{
+    "default": {
+        "tile_x":32,
+        "tile_y":32,
+        "idle": {"frames":[[0,0]]},
+        "walk": {"frames":[[1,0],[1,1],[1,2],[1,3]],"frame_delay":0.2},
+        "sit": {"frames":[[2,0]]},
+        "lay": {"frames":[[3,0]]}
+    },
+    "fish": {
+        "tile_x":16,
+        "tile_y":16,
+        "idle": {"frames":[[0,0]]},
+        "swim_left": {"frames":[[0,0],[0,1],[0,2],[0,3]],"frame_delay":1.0},
+        "swim_right": {"frames":[[1,0],[1,1],[1,2],[1,3]],"frame_delay":1.0}
+    }
+}

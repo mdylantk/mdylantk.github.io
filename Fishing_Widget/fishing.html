@@ -1,0 +1,48 @@
+<!-- This script tag bootstraps PyScript -->
+<script type="module" src="https://pyscript.net/alpha/pyscript.js" ></script>
+
+<div id="fish" style="width:320px;">
+    <div style="display: flex; flex-direction: column;">
+        <div id="header_fishing_room" style="position: relative">
+            <img src="assets/Title_Border.png" alt="title texture" style="z-index: 1;position: absolute;
+                border: 2px solid #000; background-color:cyan">
+            <div id="title_fishing_room" style="z-index:2; position: absolute;font-size:16px;height:20px;margin:4px;margin-left:10px;">
+                
+            </div>
+        </div>
+                <!--  user-select: none; will diable selecting things when clicking too much on the canvas. Note that with will diable selection text in elements
+                so it is best to use it in elements that do not have selectable text-->
+        <div id="body_fishing_room" style="position: relative; user-select: none;">
+            <canvas id="canvas_fishing_room" width="320" height="320" style="background-color:#333; 
+                background-image: url('assets/waterscape_day.png'); background-size: 100% 100%; image-rendering: pixelated; position: relative;top:20px;
+                border-bottom: 2px solid #000;border-left: 2px solid #000;border-right: 2px solid #000;">CatRoom</canvas>
+        </div>
+        <div id ="footer_fishing_room" style="position: relative;">
+            <img src="assets/Title_Border.png" alt="dialog texture" style="z-index: 1;position: absolute;height:64px;width:320px;
+                border: 2px solid #000; background-color:cyan">
+            <div id="dialog_fishing_room" style="z-index:2; position: absolute;font-size:12px;height:64px;color:white;margin:4px;margin-left:6px;margin-right:6px;">
+                     
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="assets" hidden>
+    <img id="fish_image" src="assets/fish.png" alt="fish">
+</div>
+
+<py-env>
+    - Pillow
+    - paths:
+        - /scripts/Objects.py
+        - /scripts/Fish.py
+        - /scripts/Scenes.py
+        - /scripts/Fishing_Scene.py
+        - /data/animation_data.json
+        - /data/fish_data.json
+        - /fishing.py
+</py-env>
+
+<py-script>
+    import fishing
+</py-script>
