@@ -34,6 +34,7 @@ with open('fish_data.json', 'r') as file:
 
 scenes["canvas_fishing_room"] = Fishing_Scene.Fishing_Scene("canvas_fishing_room",common_events)
 scenes["canvas_fishing_room"].title_source = document.getElementById("title_fishing_room")
+scenes["canvas_fishing_room"].dialog_source = document.getElementById("dialog_fishing_room")
 scenes["canvas_fishing_room"].set_title("Fishing Room")
 scenes["canvas_fishing_room"].fish_data = fish_data
 
