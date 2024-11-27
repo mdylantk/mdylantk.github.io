@@ -76,11 +76,12 @@ class Fishing_Scene(Scenes.Canvas_Scene):
             else:
                 self.generate_new_fish(fish)
             self.fish_caught.set_ai_state(Fish.AI_STATE.HOOKED)
-            self.set_dialog(str(fish.name) + " is hooked. (" + str(datetime.now())+")")
+            self.set_dialog(str(fish.name) + " is hooked.")
 
     def on_catch(self):
         if self.fish_caught != None:
-            self.set_dialog(str(self.fish_caught.name) + " caught. (" + str(datetime.now())+")")
+            weight = "{:.2f}".format(self.fish_caught.weight)
+            self.set_dialog(str(self.fish_caught.name) + " caught weighing " + weight +"kg")
             self.fish_caught.set_ai_state(Fish.AI_STATE.SUBMERGED)
             self.fish_caught = None
         self.interaction_state = INTERACTION_STATE.READY
