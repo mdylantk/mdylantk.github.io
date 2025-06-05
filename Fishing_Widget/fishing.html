@@ -49,6 +49,13 @@ from pyodide.ffi import create_proxy
 from PIL import Image, ImageFilter
 from datetime import datetime
 
+#FISHING VARS
+fish_div = document.getElementById('fish')
+local_storage = window.localStorage
+scenes = {}
+animation_data = {}
+fish_data = {}
+	
 #OBJECT
 class Canvas_Object:
     def __init__(self, x:float=0, y:float=0, width:float=1, height:float=1,sprite=None, animation_data = {}, name:str="Object", dialog_data = {}):
@@ -196,7 +203,6 @@ class Scene:
     def update(self):
         pass
 
-##Canvas Scene is base on the canvas and will have functions for basic canvas stuff
 class Canvas_Scene(Scene):
     def __init__(self, id, events):
         super().__init__(id, events)
@@ -298,16 +304,14 @@ class Main_Scene(Scenes.Canvas_Scene):
     def __str__(self):
         return ("Main_Scene")
     
-#FISHING SCENE
 class INTERACTION_STATE(IntEnum):
     READY = 0
     REELING = 1
-    CASTED = 2 #should be condensed into reeling
-    HOOKED = 3 #should be condensed into reeling
+    CASTED = 2 
+    HOOKED = 3 
     CATCH = 4
 
 class Fishing_Scene(Scenes.Canvas_Scene):
-
     def __init__(self, id, events):
         super().__init__(id, events)
         self.objects = []
@@ -320,7 +324,7 @@ class Fishing_Scene(Scenes.Canvas_Scene):
         self.interaction_state : INTERACTION_STATE = INTERACTION_STATE.READY
         self.fish_data = {} 
         self.fish_caught : Fish.Fish = None 
-        self.tagged_fish = [] #this is to help notify fish that are tracking the bobber when there is a hook
+        self.tagged_fish = [] 
         
     def set_title(self, title:str):
         if self.title_source != None:
@@ -664,12 +668,7 @@ class Fish(Objects.Canvas_Object):
     def __str__(self):
         return self.name
 
-#FISHING    
-fish_div = document.getElementById('fish')
-local_storage = window.localStorage
-scenes = {}
-animation_data = {}
-fish_data = {}
+#FISHING MAIN
 
 def handle_events(event):
 	event_owner_id = event.target.id
