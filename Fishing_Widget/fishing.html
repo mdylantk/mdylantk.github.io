@@ -41,6 +41,7 @@
     
 import random
 import math
+import os
 from js import document
 from js import window
 from enum import IntEnum
@@ -76,7 +77,7 @@ class Canvas_Object:
 
         self.name = name
         self.dialog_source = dialog_data
-        self.data = {} #this is metadata. it contains extra data that can be added, but mostlty be unused for static objects
+        self.data = {} 
 
         self.navigation = None
 
