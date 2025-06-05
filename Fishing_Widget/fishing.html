@@ -34,5 +34,11 @@
 <script type="mpy" config='{"files":{"https://mdylantk.github.io/Fishing_Widget/scripts/Objects.py":"/Objects.py", "https://mdylantk.github.io/Fishing_Widget/scripts/Fish.py":"/Fish.py", "https://mdylantk.github.io/Fishing_Widget/scripts/Scenes.py":"/Scenes.py", "https://mdylantk.github.io/Fishing_Widget/scripts/Fishing_Scene.py":"/Fishing_Scene.py", "https://mdylantk.github.io/Fishing_Widget/data/animation_data.json":"/animation_data.json", "https://mdylantk.github.io/Fishing_Widget/data/fish_data.json":"/fish_data.json","https://mdylantk.github.io/Fishing_Widget/fishing.py":"/fishing.py"}}'></script>
 
 <py-script>
+    import os
+    directory = '.'
+    files = os.listdir(directory)
+    print("Available files and directories:")
+    for file in files:
+        print(file)
     import fishing
 </py-script>
