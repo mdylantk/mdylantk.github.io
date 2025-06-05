@@ -49,5 +49,17 @@
 </py-config>
 
 <py-script>
+    import os
     import fishing
+
+    directory = '.'
+
+    files = os.listdir(directory)
+
+    print("Available files and directories:")
+    for file in files:
+        print(file)
+    
+    
+    
 </py-script>
