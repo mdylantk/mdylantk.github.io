@@ -529,7 +529,7 @@ class Fishing_Scene(Canvas_Scene):
                 dist_y = y - obj.y
                 dist = math.sqrt(dist_x * dist_x + dist_y  * dist_y )
                 if dist < 16:
-                    obj.set_ai_state(Fish.AI_STATE.PANICKED)
+                    obj.set_ai_state(AI_STATE.PANICKED)
                     #obj.on_clicked()
             if x > self.bounds[0] and x < self.bounds[2] and y > self.bounds[1] and y < self.bounds[3]:
                 self.bobber.x = x
@@ -546,14 +546,14 @@ class Fishing_Scene(Canvas_Scene):
                 pass
             else:
                 self.generate_new_fish(fish)
-            self.fish_caught.set_ai_state(Fish.AI_STATE.HOOKED)
+            self.fish_caught.set_ai_state(AI_STATE.HOOKED)
             self.set_dialog(str(fish.name) + " is hooked.")
 
     def on_catch(self):
         if self.fish_caught != None:
             weight = "{:.2f}".format(self.fish_caught.weight)
             self.set_dialog(str(self.fish_caught.name) + " caught weighing " + weight +"kg")
-            self.fish_caught.set_ai_state(Fish.AI_STATE.SUBMERGED)
+            self.fish_caught.set_ai_state(AI_STATE.SUBMERGED)
             self.fish_caught = None
         self.interaction_state = INTERACTION_STATE.READY
         pass
