@@ -1,0 +1,13 @@
+{
+  "packages" : ["Pillow"],
+  "files" : 
+  {
+    "/Fishing_Widget/scripts/Objects.py": "",
+    "/Fishing_Widget/scripts/Fish.py": "",
+    "/Fishing_Widget/scripts/Scenes.py": "",
+    "/Fishing_Widget/scripts/Fishing_Scene.py": "",
+    "/Fishing_Widget/data/animation_data.json": "",
+    "/Fishing_Widget/data/fish_data.json": "",
+    "/Fishing_Widget/fishing.py": "",
+  }
+}
