@@ -1,9 +1,14 @@
+
+print "starting fishing.py"
+
 import Fishing_Scene
 import json
 import Fish
 import random
 from js import document
 from js import window
+
+print "import done"
 
 fish_div = document.getElementById('fish')
 local_storage = window.localStorage
