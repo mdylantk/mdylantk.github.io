@@ -31,10 +31,7 @@
     <img id="fish_image" src="assets/fish.png" alt="fish">
 </div>
 
-<py-config type="toml">
-    packages = ["Pillow"]
-    paths = [/Fishing_Widget/scripts/Objects.py,/Fishing_Widget/scripts/Fish.py,/Fishing_Widget/scripts/Scenes.py,/Fishing_Widget/scripts/Fishing_Scene.py,/Fishing_Widget/data/animation_data.json,/Fishing_Widget/data/fish_data.json,/Fishing_Widget/fishing.py]
-</py-config>
+<script type="mpy" src="main.py" config='{"packages":["Pillow"],"files":{"https://mdylantk.github.io/Fishing_Widget/scripts/Objects.py":"/Objects.py", "https://mdylantk.github.io/Fishing_Widget/scripts/Fish.py":"/Fish.py", "https://mdylantk.github.io/Fishing_Widget/scripts/Scenes.py":"/Scenes.py", "https://mdylantk.github.io/Fishing_Widget/scripts/Fishing_Scene.py":"/Fishing_Scene.py", "https://mdylantk.github.io/Fishing_Widget/data/animation_data.json":"/animation_data.json", "https://mdylantk.github.io/Fishing_Widget/data/fish_data.json":"/fish_data.json","https://mdylantk.github.io/Fishing_Widget/fishing.py":"/fishing.py"}}'></script>
 
 <py-script>
     import fishing
