@@ -1,5 +1,5 @@
 <!-- This script tag bootstraps PyScript -->
-<script type="module" src="https://pyscript.net/releases/2025.5.1/core.js"></script>
+<script type="module" src="https://pyscript.net/releases/2024.11.1/core.js"></script>
 
 <div id="fish" style="width:320px;">
     <div style="display: flex; flex-direction: column;">
@@ -31,7 +31,17 @@
     <img id="fish_image" src="assets/fish.png" alt="fish">
 </div>
 
-<script type="mpy" config='{"files":{"/Fishing_Widget/scripts/Objects.py":"", "/Fishing_Widget/scripts/Fish.py":"", "/Fishing_Widget/scripts/Scenes.py":"", "/Fishing_Widget/scripts/Fishing_Scene.py":"", "/Fishing_Widget/data/animation_data.json":"", "/Fishing_Widget/data/fish_data.json":"","/Fishing_Widget/fishing.py":""}}'></script>
+<py-env>
+    - PillowMore actions
+    - paths:
+        - /Fishing_Widget/scripts/Objects.py
+        - /Fishing_Widget/scripts/Fish.py
+        - /Fishing_Widget/scripts/Scenes.py
+        - /Fishing_Widget/scripts/Fishing_Scene.py
+        - /Fishing_Widget/data/animation_data.json
+        - /Fishing_Widget/data/fish_data.json
+        - /Fishing_Widget/fishing.py
+</py-env>
 
 <py-script>
     import fishing
