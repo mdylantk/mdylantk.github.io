@@ -45,25 +45,13 @@ from js import document
 from js import window
 from enum import IntEnum
 from js import document, window
-from pyodide import create_proxy
+from pyodide.ffi import create_proxy
 from PIL import Image, ImageFilter
 from datetime import datetime
 
 #OBJECT
 class Canvas_Object:
-    #notify are events that can be listen too. stored in a dict so it can be unregerted easier.
-    #basicly instead of parent checking all the children for change, this will let the listern know there is a change
-    #let say object location move, we could rerender it, but we would need to get the ctx also we need to rerender everything
-    #so it better to let parent know so it can update next frame
-    #notify_state_change = {}
-    #collison_handler = None
-   #message_handler = None #This is more of an abstract call. it currently for testing dialog. baislcy the mesage is that it want to speak something. (aka say:meow!)
-    #animation_data = {}
-    #animation = "idle"
-    #direction = [1.0,0.0]
-
     def __init__(self, x:float=0, y:float=0, width:float=1, height:float=1,sprite=None, animation_data = {}, name:str="Object", dialog_data = {}):
-        
         self.notify_state_change = {}
         self.collison_handler = None
         self.message_handler = None #This is more of an abstract call. it currently for testing dialog. baislcy the mesage is that it want to speak something. (aka say:meow!)
@@ -83,11 +71,9 @@ class Canvas_Object:
         self.dialog_source = dialog_data
         self.data = {} #this is metadata. it contains extra data that can be added, but mostlty be unused for static objects
 
-        #this is a nav object. it should contain functions to call that the ai can used to pick a path. also could be an dict
         self.navigation = None
 
     def render(self, ctx,x_scale: float = 1.0, y_scale: float = 1.0, delta : float = 1.0):
-
         if self.sprite != None:
             if not self.animation_data:
                 ctx.drawImage(self.sprite, self.x, self.y, self.width, self.height)
@@ -113,18 +99,11 @@ class Canvas_Object:
                     frame_x = frames_data["frames"][current_frame][1] * frame_width 
                     frame_y = frames_data["frames"][current_frame][0] * frame_height
                     if self.animation_speed == 0:
-                        #if speed is 0, ignore updates since animation is paused
                         self.animation_data[self.animation]["current_frame"] = 0
-                        #self.animation_data[self.animation]["frame_ticks"] = 0
-                        pass
                     else:
                         if frame_ticks >= delay:
                             if (current_frame + 1) < len(frames_data["frames"]) and current_frame >= 0:
-                                #note need to set it in the dict ref, not the possible clone of it
                                 self.animation_data[self.animation]["current_frame"] = current_frame + 1
-                        
-                            #elif current_frame + 1 == len(frames_data["frames"][current_frame]):
-                            #    self.animation_data["current_frame"] = 0
                             else:
                                 self.animation_data[self.animation]["current_frame"] = 0
 
@@ -181,26 +160,18 @@ class Canvas_Object:
             return_value[1] = y/magnitude
         return return_value
 
-
     def __str__(self):
         return ("Canvas_Object")
 
 
 #SCENE
-
-##A Scene is data relating to a js element or a viewspace. It role is to handle what is displayed on it
-##addition data could be provided. Owner can listen by regersting this in a diction with an id or similar base on the source
-##and then use the funtion pass by the events to cross ref the ownership
 class Scene:
     def __init__(self, id, events):
         self._events = {} #moving events here so thet can be unquie
         print("test")
-        #this is the doctument source of the doc element that owns this. 
         self.source = document.getElementById(id)
-        #an override of the bounds
         self.bounds = [0,0,self.source.width,self.source.height]
         for event_id in events:
-            #event_proxy = create_proxy(events[event_id])
             self.add_event(event_id,events[event_id])
 
     def __del__(self):
@@ -208,7 +179,6 @@ class Scene:
         for event_id in event_ref:
             self.remove_event(event_id)
 
-    #Note: There are also window events. either have parent handle that or  add a second group of events depenent on the window events
     def add_event(self, event_id, event):
         event_proxy = create_proxy(event)
         self.source.addEventListener(event_id, event_proxy)
@@ -220,7 +190,6 @@ class Scene:
         event_proxy.destroy()
         del self._events[event_id]
 
-    #the owner(main handler) should call  to make sure the logic runs here as well so the owner wont need to caculate everything directly
     def handle_event(self, event):
         pass
 
@@ -229,16 +198,13 @@ class Scene:
 
 ##Canvas Scene is base on the canvas and will have functions for basic canvas stuff
 class Canvas_Scene(Scene):
-
     def __init__(self, id, events):
         super().__init__(id, events)
-        #NOTE: need to define objects in init else all canvas scenes will use the same array
         self.objects = []
         self.is_mousedown = False #this is a shared flag so that mouse down and up events can be handled without recreating the logic
 
     def render(self, delta : float = 1.0):
         ctx = self.source.getContext("2d")
-        #caculate zones such as title bar and content
         width = self.source.width
         height = self.source.height
         ctx.reset()
@@ -247,11 +213,9 @@ class Canvas_Scene(Scene):
             obj.ai_update(None,delta)
             obj.render(ctx, 1.0, 1.0, delta)
 
-    ##This sends a message from object to scene. The message is an abstract event so what is sent could be anything. An exampe is if the object want thew scen to display 'meow'
     def message_handler(self,object,type,message):
         pass
 
-    ##this is called by object to check if a point has collsion. Will return a dictionary of data of the collsion. {"blocked":True} would mean there was collsion
     def collison_handler(self,x:float=0,y:float=0,z:float=0,data=None)-> dict:
         max_x =self.bounds[2]
         max_y = self.bounds[3]
@@ -265,16 +229,11 @@ class Canvas_Scene(Scene):
         return data
 
     def assign_object(self,obj):
-        #if self.objects == None:
-        #    self.objects = []
         self.objects.append(obj)
         obj.notify_state_change[self]=self.on_object_state_change
         obj.collison_handler = self.collison_handler
         obj.message_handler = self.message_handler
 
-    #These will return true if there was a change
-    #but did not add condtions so it will set the flag regardless
-    #these are helper private functions. on_mousedown and on_mouseup may call them to change the mousestate and use the return values to know if there is a change
     def _mousedown(self) -> bool:
         state_change = self.is_mousedown != True
         self.is_mousedown = True
@@ -291,19 +250,10 @@ class Main_Scene(Scenes.Canvas_Scene):
     
     def __init__(self, id, events):
         super().__init__(id, events)
-        #NOTE: need to define objects in init else all canvas scenes will use the same array
         self.objects = []
 
         self.title_text:str = "Title"
-        #will decide how to handle colors since some thing may use sprite sheets for textures like the title bar background(and content background)
-
-        #could use a callable like with the events to listen for child changes, or could have the scene have functions to modify it and the object acts as data for display
-        #NOTE: could keep as an array and add more var, or could change to a dict of arrays and have assign object have an optional parameter for type
-        #first probably still better and then keep a function for each types. could use array/dict of arrays for z index but may be better to reserver layers thand handle dynamic layers
-        #objects = []
-
         self.title_source = None
-        #NOTE: dialog may be here and in the object depending on use case. here only if dialog is reusable, in object if each object may hove its own dialog tree
         self.dialog_source = None
     
 
@@ -319,17 +269,8 @@ class Main_Scene(Scenes.Canvas_Scene):
     def on_object_state_change(self,obj):
         self.render()
 
-    #def assign_object(self,obj):
-    #    self.objects.append(obj)
-    #    obj.notify_state_change[self]=self.on_object_state_change
-    #    obj.collison_handler = self.collison_handler
-    #    obj.message_handler = self.message_handler
-
-    #handle self when there is a js event since owner should be handling the rebinding
     def handle_event(self, event):
-        #ctx = self.source.getContext("2d")
         time_triggered = datetime.now()
-        #self.set_dialog("the event {" + str(event.type) + "} was triggered at " + str(time_triggered)) #note: this would mess up dialog and stuff. so should only print data if no dialog is in process(or catch data in a log and flop between the two as needed)
         if event.type == "mousedown" or event.type == "touchstart":
             bounds = self.source.getBoundingClientRect()
             x = event.clientX - bounds.left
@@ -342,25 +283,13 @@ class Main_Scene(Scenes.Canvas_Scene):
 
     def render(self, delta : float = 1.0):
         ctx = self.source.getContext("2d")
-        #caculate zones such as title bar and content
         width = self.source.width
         height = self.source.height
         ctx.reset()
 
-        
-        #render all the objects
         for obj in self.objects:
             obj.ai_update(None,delta)
             obj.render(ctx,1.0,1.0,delta)
-
-    #def collison_handler(self,x:float=0,y:float=0,z:float=0,data=None)-> dict:
-    #    max_x =self.source.width
-    #    max_y = self.source.height
-    #    if x >= max_x or x <= 0:
-    #        return {"blocked":True}
-    #    if y >= max_y or y <= 0:
-    #        return {"blocked":True}
-    #    return {"blocked":False}
     
     def message_handler(self,object,type,message):
         if type == "Say":
@@ -393,9 +322,6 @@ class Fishing_Scene(Scenes.Canvas_Scene):
         self.fish_caught : Fish.Fish = None 
         self.tagged_fish = [] #this is to help notify fish that are tracking the bobber when there is a hook
         
-
-    
-    
     def set_title(self, title:str):
         if self.title_source != None:
             self.title_source.textContent = title
@@ -412,7 +338,6 @@ class Fishing_Scene(Scenes.Canvas_Scene):
             x = event.clientX - bounds.left
             y = event.clientY - bounds.top
             self.on_cast(x,y)
-
 
     def on_cast(self, x : float = 0.0, y : float = 0.0):
         if self.interaction_state == INTERACTION_STATE.READY:
@@ -458,7 +383,6 @@ class Fishing_Scene(Scenes.Canvas_Scene):
         fish_strength = 0.0
         if self.fish_caught != None:
             fish_strength = random.random()*self.fish_caught.weight
-            #NOTE: the bobber ai(if used) should run after this and fish ai before this.
         reeling_strength = (self.reeling_strength - fish_strength) * delta
         clamped_reeling_strength = min(max(reeling_strength,0.01),4) 
         if reeling_strength > 0:
@@ -468,15 +392,10 @@ class Fishing_Scene(Scenes.Canvas_Scene):
                 self.reeling_strength = 0
                 self.on_catch()
         elif reeling_strength < 0:
-            #TODO: set the bobber move to location base on the fish desired location (need to set on when in hooked state still and handle how often it changes)
-            #NOTE: get the rod look at direction to the fish desire location and then times it by the length of the remaining line. Then just need to pick which one
-            #that has the shortest length
             pass
         if self.reeling_strength > 0:
             self.reeling_strength =  max(self.reeling_strength - delta,0)
             
-
-    
     def is_reeled_in(self):
         return self.bobber.y >= self.source.height
     
@@ -490,7 +409,6 @@ class Fishing_Scene(Scenes.Canvas_Scene):
 
     def render(self, delta : float = 1.0):
         ctx = self.source.getContext("2d")
-        #caculate zones such as title bar and content
         width = self.source.width
         height = self.source.height
         
@@ -508,7 +426,6 @@ class Fishing_Scene(Scenes.Canvas_Scene):
                     obj.targer = None
                 obj.ai_update({"bobber":self.bobber},delta)
             elif self.fish_caught != None and self.tagged_fish:
-                #Will remove the fish target if a fish is caught on the line
                 fish = self.tagged_fish.pop()
                 if fish != self.fish_caught:
                     fish.target = None
@@ -529,7 +446,6 @@ class Fishing_Scene(Scenes.Canvas_Scene):
             return random.choice(list(self.fish_data.keys()))
         return None
     
-    ##This will change the fish data so the fish object can be reused
     def generate_new_fish(self,fish):
         new_name = self.pick_fish_type()
         if new_name != None:
@@ -552,7 +468,6 @@ class Fishing_Scene(Scenes.Canvas_Scene):
     def __str__(self):
         return ("Main_Scene")
     
-#declaring it here since this is the only place it will be used. other places would assume it is an object
 class Bobber(Objects.Canvas_Object):
     def __init__(self, x:float=0, y:float=0, width:float=1, height:float=1,sprite=None, animation_data = {}, name:str="Bobber", dialog_data = None):
         super().__init__(x,y,width,height,sprite,animation_data,name,dialog_data)
@@ -570,7 +485,6 @@ class Bobber(Objects.Canvas_Object):
                 self.height * y_scale
             )
 
-
 #FISH
 class AI_STATE(IntEnum):
     IDLE = 0
@@ -583,7 +497,6 @@ class AI_STATE(IntEnum):
 
 
 class Fish(Objects.Canvas_Object):
-
     def __init__(self, x:float=0, y:float=0, width:float=1, height:float=1,sprite=None, animation_data = {}, name:str="Fish", dialog_data = None):
         super().__init__(x,y,width,height,sprite,animation_data,name,dialog_data)
         self.ai_state : AI_STATE = AI_STATE.IDLE
@@ -603,8 +516,6 @@ class Fish(Objects.Canvas_Object):
         self.stamina : float = 100.0
         self.stamina_regen : float = 0.1 #this is base off of seconds. so delta of 0.1 would regen 0.01 per tick
     
-    #test action. return bool to state if there been an interaction. default should be null
-    #unless used. currently used for debugging
     def on_clicked(self)->bool:
         self.set_ai_state(AI_STATE.PANICKED)
         return True
@@ -619,7 +530,6 @@ class Fish(Objects.Canvas_Object):
                 if self.target != None:
                     length = self.vector_magnitude(self.target.x - self.x ,self.target.y - self.y)
                     if length < 8:
-                        #self.set_ai_state(AI_STATE.HOOKED)
                         self.message_handler(self,"Bite", self.name)
                     else:
                         self.set_ai_state(AI_STATE.IDLE)
@@ -627,8 +537,6 @@ class Fish(Objects.Canvas_Object):
                     self.set_ai_state(AI_STATE.IDLE)
             pass
         elif self.ai_state == AI_STATE.HOOKED:
-            #if self.swiming_update(delta):
-            #    self.set_random_location()
             self.hook_update(delta)
             
         elif self.ai_state == AI_STATE.PANICKED:
@@ -666,8 +574,6 @@ class Fish(Objects.Canvas_Object):
                         self.move_location[1] = bobber_y
                     else:
                         self.message_handler(self,"Bite", self.name)
-
-
 
     def hook_update(self,delta : float = 0.1):
         if self.target == None:
@@ -723,7 +629,6 @@ class Fish(Objects.Canvas_Object):
             self.set_ai_state(AI_STATE.SUBMERGED)
 
     def set_ai_state(self,new_state:int):
-        #basicly 0 is default state and 1 is startled.
         if self.ai_state != new_state:
             self.ai_state = new_state
             if self.ai_state == AI_STATE.IDLE:
@@ -906,7 +811,6 @@ for i in range(0,10):
         
 scenes["canvas_fishing_room"].render()
 
-        #this is a timer test. ensure_future was the only one that worked
 import asyncio
 async def update_tick():
     delta : float = 0.1
