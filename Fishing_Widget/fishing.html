@@ -10,7 +10,7 @@
                 
             </div>
         </div>
-                <!--  user-select: none; will diable selecting things when clicking too much on the canvas. Note that with will diable selection text in elements
+                <!--  user-select: none; will disable selecting things when clicking too much on the canvas. Note that with will disable selection text in elements
                 so it is best to use it in elements that do not have selectable text-->
         <div id="body_fishing_room" style="position: relative; user-select: none;">
             <canvas id="canvas_fishing_room" width="320" height="320" style="background-color:#333; 
@@ -31,18 +31,6 @@
     <img id="fish_image" src="assets/fish.png" alt="fish">
 </div>
 
-<py-env>
-    - Pillow
-    - paths:
-        - /Fishing_Widget/scripts/Objects.py
-        - /Fishing_Widget/scripts/Fish.py
-        - /Fishing_Widget/scripts/Scenes.py
-        - /Fishing_Widget/scripts/Fishing_Scene.py
-        - /Fishing_Widget/data/animation_data.json
-        - /Fishing_Widget/data/fish_data.json
-        - /Fishing_Widget/fishing.py
-</py-env>
-
 <py-config type="toml">
     packages = ["Pillow"]
     files = {"https://mdylantk.github.io/Fishing_Widget/scripts/Objects.py":"/Objects.py", "https://mdylantk.github.io/Fishing_Widget/scripts/Fish.py":"/Fish.py", "https://mdylantk.github.io/Fishing_Widget/Fishing_Widget/scripts/Scenes.py":"/Scenes.py", "https://mdylantk.github.io/Fishing_Widget/scripts/Fishing_Scene.py":"/Fishing_Scene.py", "https://mdylantk.github.io/Fishing_Widget/data/animation_data.json":"/animation_data.json", "https://mdylantk.github.io/Fishing_Widget/data/fish_data.json":"/fish_data.json","https://mdylantk.github.io/Fishing_Widget/fishing.py":"/fishing.py"}
@@ -58,8 +46,5 @@
 
     print("Available files and directories:")
     for file in files:
-        print(file)
-    
-    
-    
+        print(file) 
 </py-script>
