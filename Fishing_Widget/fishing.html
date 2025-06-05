@@ -323,7 +323,7 @@ class Fishing_Scene(Canvas_Scene):
         self.bounds = [0,150,self.source.width,min(300,self.source.height)]
         self.interaction_state : INTERACTION_STATE = INTERACTION_STATE.READY
         self.fish_data = {} 
-        self.fish_caught : Fish.Fish = None 
+        self.fish_caught : Fish = None 
         self.tagged_fish = [] 
         
     def set_title(self, title:str):
@@ -360,7 +360,7 @@ class Fishing_Scene(Canvas_Scene):
         elif self.interaction_state == INTERACTION_STATE.REELING:
             self.on_reel()
 
-    def on_hook(self,fish:Fish.Fish = None):
+    def on_hook(self,fish:Fish = None):
         if fish != None and self.fish_caught == None:
             self.fish_caught = fish
             if self.fish_caught.name in self.fish_data.keys():
@@ -472,7 +472,7 @@ class Fishing_Scene(Canvas_Scene):
     def __str__(self):
         return ("Main_Scene")
     
-class Bobber(Objects.Canvas_Object):
+class Bobber(Canvas_Object):
     def __init__(self, x:float=0, y:float=0, width:float=1, height:float=1,sprite=None, animation_data = {}, name:str="Bobber", dialog_data = None):
         super().__init__(x,y,width,height,sprite,animation_data,name,dialog_data)
         self.move_location = [0,0]
@@ -500,7 +500,7 @@ class AI_STATE(IntEnum):
     SURFACING = 6
 
 
-class Fish(Objects.Canvas_Object):
+class Fish(Canvas_Object):
     def __init__(self, x:float=0, y:float=0, width:float=1, height:float=1,sprite=None, animation_data = {}, name:str="Fish", dialog_data = None):
         super().__init__(x,y,width,height,sprite,animation_data,name,dialog_data)
         self.ai_state : AI_STATE = AI_STATE.IDLE
