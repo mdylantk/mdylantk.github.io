@@ -31,23 +31,12 @@
     <img id="fish_image" src="assets/fish.png" alt="fish">
 </div>
 
-<!--<py-env>
-    - Pillow
-    - paths:
-        - /Fishing_Widget/scripts/Objects.py
-        - /Fishing_Widget/scripts/Fish.py
-        - /Fishing_Widget/scripts/Scenes.py
-        - /Fishing_Widget/scripts/Fishing_Scene.py
-        - /Fishing_Widget/data/animation_data.json
-        - /Fishing_Widget/data/fish_data.json
-        - /Fishing_Widget/fishing.py
-</py-env>-->
-<!--
-<script type="mpy" config='{"packages" : ["Pillow"],"files" : {"/Fishing_Widget/scripts/Objects.py": "","/Fishing_Widget/scripts/Fish.py": "","/Fishing_Widget/scripts/Scenes.py": "","/Fishing_Widget/scripts/Fishing_Scene.py": "","/Fishing_Widget/data/animation_data.json": "","/Fishing_Widget/data/fish_data.json": "","/Fishing_Widget/fishing.py": "",}}'></script>
-
-
--->
-<script type="py" scr="./fishing.py" config="./py-config.json"> </script>
+<py-config>
+{
+    "packages": ["Pillow"],
+    "files": {"/Fishing_Widget/scripts/Objects.py": "","/Fishing_Widget/scripts/Fish.py": "","/Fishing_Widget/scripts/Scenes.py": "","/Fishing_Widget/scripts/Fishing_Scene.py": "","/Fishing_Widget/data/animation_data.json": "","/Fishing_Widget/data/fish_data.json": "","/Fishing_Widget/fishing.py": "",}
+}
+</py-config>
 
 <py-script>
     import fishing
