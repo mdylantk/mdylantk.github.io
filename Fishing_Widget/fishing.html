@@ -456,19 +456,19 @@ class Main_Scene(Canvas_Scene):
     def handle_event(self, event):
         time_triggered = datetime.now()
         if event.type == "mousedown" or event.type == "touchstart":
-            bounds = self.source.getBoundingClientRect()
+			bounds = self.source.getBoundingClientRect()
 	    if event.type == "touchstart":
-		if len(event.touches) >= 0:
-	    	    touch = event.touches[0]
-    		    x = touch.clientX - bounds.left;
-   		    y = touch.clientY - bounds.top;
-		else:
-		    #NOTE: may need a diffrent approch if this is ever called
-		    return
-	    else:
-            	x = event.clientX - bounds.left
-            	y = event.clientY - bounds.top
-            for obj in self.objects:
+			if len(event.touches) >= 0:
+				touch = event.touches[0]
+				x = touch.clientX - bounds.left;
+				y = touch.clientY - bounds.top;
+			else:
+				#NOTE: may need a diffrent approch if this is ever called
+				return
+			else:
+				x = event.clientX - bounds.left
+				y = event.clientY - bounds.top
+			for obj in self.objects:
                 if x >= obj.x and x <= obj.x + obj.width:
                     if y >= obj.y and y <= obj.y + obj.height:
                         if obj.on_clicked():
