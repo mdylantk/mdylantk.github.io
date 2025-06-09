@@ -2,43 +2,43 @@
 <script type="module" src="https://pyscript.net/releases/2025.5.1/core.js"></script>
 
 <div id="fish" style="width:320px;">
-    <div style="display: flex; flex-direction: column;">
-        <div id="header_fishing_room" style="position: relative">
-            <img src="assets/Title_Border.png" alt="title texture" style="z-index: 1;position: absolute;
-                border: 2px solid #000; background-color:cyan">
-            <div id="title_fishing_room" style="z-index:2; position: absolute;font-size:16px;height:20px;margin:4px;margin-left:10px;">
-                
-            </div>
-        </div>
-                <!--  user-select: none; will disable selecting things when clicking too much on the canvas. Note that with will disable selection text in elements
-                so it is best to use it in elements that do not have selectable text-->
-        <div id="body_fishing_room" style="position: relative; user-select: none;">
-            <canvas id="canvas_fishing_room" width="320" height="320" style="background-color:#333; 
-                background-image: url('assets/waterscape_day.png'); background-size: 100% 100%; image-rendering: pixelated; position: relative;top:20px;
-                border-bottom: 2px solid #000;border-left: 2px solid #000;border-right: 2px solid #000;">CatRoom</canvas>
-        </div>
-        <div id ="footer_fishing_room" style="position: relative;">
-            <img src="assets/Title_Border.png" alt="dialog texture" style="z-index: 1;position: absolute;height:64px;width:320px;
-                border: 2px solid #000; background-color:cyan">
-            <div id="dialog_fishing_room" style="z-index:2; position: absolute;font-size:12px;height:64px;color:white;margin:4px;margin-left:6px;margin-right:6px;">
-                     
-            </div>
-        </div>
-    </div>
+	<div style="display: flex; flex-direction: column;">
+		<div id="header_fishing_room" style="position: relative">
+			<img src="assets/Title_Border.png" alt="title texture" style="z-index: 1;position: absolute;
+				border: 2px solid #000; background-color:cyan">
+			<div id="title_fishing_room" style="z-index:2; position: absolute;font-size:16px;height:20px;margin:4px;margin-left:10px;">
+				
+			</div>
+		</div>
+				<!--  user-select: none; will disable selecting things when clicking too much on the canvas. Note that with will disable selection text in elements
+				so it is best to use it in elements that do not have selectable text-->
+		<div id="body_fishing_room" style="position: relative; user-select: none;">
+			<canvas id="canvas_fishing_room" width="320" height="320" style="background-color:#333; 
+				background-image: url('assets/waterscape_day.png'); background-size: 100% 100%; image-rendering: pixelated; position: relative;top:20px;
+				border-bottom: 2px solid #000;border-left: 2px solid #000;border-right: 2px solid #000;">CatRoom</canvas>
+		</div>
+		<div id ="footer_fishing_room" style="position: relative;">
+			<img src="assets/Title_Border.png" alt="dialog texture" style="z-index: 1;position: absolute;height:64px;width:320px;
+				border: 2px solid #000; background-color:cyan">
+			<div id="dialog_fishing_room" style="z-index:2; position: absolute;font-size:12px;height:64px;color:white;margin:4px;margin-left:6px;margin-right:6px;">
+					 
+			</div>
+		</div>
+	</div>
 </div>
 
 <div id="assets" hidden>
-    <img id="fish_image" src="assets/fish.png" alt="fish">
+	<img id="fish_image" src="assets/fish.png" alt="fish">
 </div>
 
 <py-config>
 {
-    "packages": ["Pillow"]
+	"packages": ["Pillow"]
 }
 </py-config>
 
 <py-script>
-    
+	
 import random
 import math
 import os
@@ -58,404 +58,404 @@ fish_data = {}
 	
 #OBJECT
 class Canvas_Object:
-    def __init__(self, x:float=0, y:float=0, width:float=1, height:float=1,sprite=None, animation_data = {}, name:str="Object", dialog_data = {}):
-        self.notify_state_change = {}
-        self.collison_handler = None
-        self.message_handler = None #This is more of an abstract call. it currently for testing dialog. baislcy the mesage is that it want to speak something. (aka say:meow!)
-        #animation_data = {}
-        self.animation = "idle"
-        self.direction : list[float] = [1.0,0.0] #should only be -1, 0, or 1
-        
-        self.x : float = x
-        self.y : float = y
-        self.width : float = width
-        self.height : float = height
-        self.sprite = sprite
-        self.animation_data = animation_data
-        self.animation_speed : float = 1.0
+	def __init__(self, x:float=0, y:float=0, width:float=1, height:float=1,sprite=None, animation_data = {}, name:str="Object", dialog_data = {}):
+		self.notify_state_change = {}
+		self.collison_handler = None
+		self.message_handler = None #This is more of an abstract call. it currently for testing dialog. baislcy the mesage is that it want to speak something. (aka say:meow!)
+		#animation_data = {}
+		self.animation = "idle"
+		self.direction : list[float] = [1.0,0.0] #should only be -1, 0, or 1
+		
+		self.x : float = x
+		self.y : float = y
+		self.width : float = width
+		self.height : float = height
+		self.sprite = sprite
+		self.animation_data = animation_data
+		self.animation_speed : float = 1.0
 
-        self.name = name
-        self.dialog_source = dialog_data
-        self.data = {} 
+		self.name = name
+		self.dialog_source = dialog_data
+		self.data = {} 
 
-        self.navigation = None
+		self.navigation = None
 
-    def render(self, ctx,x_scale: float = 1.0, y_scale: float = 1.0, delta : float = 1.0):
-        if self.sprite != None:
-            if not self.animation_data:
-                ctx.drawImage(self.sprite, self.x, self.y, self.width, self.height)
-            else:
-                frame_width = self.animation_data["tile_x"]
-                frame_height = self.animation_data["tile_y"]
-                frame_x = 0
-                frame_y = 0
-                if self.animation in self.animation_data:
-                    frames_data = self.animation_data[self.animation]
-                    delay = 0
-                    frame_ticks = 0
-                    if "frame_delay" in frames_data:
-                        delay = frames_data["frame_delay"] 
-                        if delay != 0 and self.animation_speed != 0:
-                            #this is a fail check since dividing zero pcs usally hate. also would be pause or max speed in this case
-                            delay = frames_data["frame_delay"] / (self.animation_speed * delta)
-                    if "frame_ticks" in frames_data:
-                        frame_ticks = frames_data["frame_ticks"]
-                    current_frame = 0
-                    if "current_frame" in frames_data:
-                        current_frame = frames_data["current_frame"]
-                    frame_x = frames_data["frames"][current_frame][1] * frame_width 
-                    frame_y = frames_data["frames"][current_frame][0] * frame_height
-                    if self.animation_speed == 0:
-                        self.animation_data[self.animation]["current_frame"] = 0
-                    else:
-                        if frame_ticks >= delay:
-                            if (current_frame + 1) < len(frames_data["frames"]) and current_frame >= 0:
-                                self.animation_data[self.animation]["current_frame"] = current_frame + 1
-                            else:
-                                self.animation_data[self.animation]["current_frame"] = 0
+	def render(self, ctx,x_scale: float = 1.0, y_scale: float = 1.0, delta : float = 1.0):
+		if self.sprite != None:
+			if not self.animation_data:
+				ctx.drawImage(self.sprite, self.x, self.y, self.width, self.height)
+			else:
+				frame_width = self.animation_data["tile_x"]
+				frame_height = self.animation_data["tile_y"]
+				frame_x = 0
+				frame_y = 0
+				if self.animation in self.animation_data:
+					frames_data = self.animation_data[self.animation]
+					delay = 0
+					frame_ticks = 0
+					if "frame_delay" in frames_data:
+						delay = frames_data["frame_delay"] 
+						if delay != 0 and self.animation_speed != 0:
+							#this is a fail check since dividing zero pcs usally hate. also would be pause or max speed in this case
+							delay = frames_data["frame_delay"] / (self.animation_speed * delta)
+					if "frame_ticks" in frames_data:
+						frame_ticks = frames_data["frame_ticks"]
+					current_frame = 0
+					if "current_frame" in frames_data:
+						current_frame = frames_data["current_frame"]
+					frame_x = frames_data["frames"][current_frame][1] * frame_width 
+					frame_y = frames_data["frames"][current_frame][0] * frame_height
+					if self.animation_speed == 0:
+						self.animation_data[self.animation]["current_frame"] = 0
+					else:
+						if frame_ticks >= delay:
+							if (current_frame + 1) < len(frames_data["frames"]) and current_frame >= 0:
+								self.animation_data[self.animation]["current_frame"] = current_frame + 1
+							else:
+								self.animation_data[self.animation]["current_frame"] = 0
 
-                            self.animation_data[self.animation]["frame_ticks"] = 0
-                        else:
-                            self.animation_data[self.animation]["frame_ticks"] = frame_ticks + 1
-                            
-                ctx.drawImage(
-                    self.sprite, 
-                    frame_x, frame_y, 
-                    frame_width, 
-                    frame_height, 
-                    self.x, 
-                    self.y, 
-                    self.width * x_scale, 
-                    self.height * y_scale
-                    )
+							self.animation_data[self.animation]["frame_ticks"] = 0
+						else:
+							self.animation_data[self.animation]["frame_ticks"] = frame_ticks + 1
+							
+				ctx.drawImage(
+					self.sprite, 
+					frame_x, frame_y, 
+					frame_width, 
+					frame_height, 
+					self.x, 
+					self.y, 
+					self.width * x_scale, 
+					self.height * y_scale
+					)
 
-    def on_clicked(self)->bool:
-        if True:
-            #Note: no logic here, so returning false
-            #below is an example of a change in state and a vaild clickable object
-            return False
-        else:
-            self.notify(self.notify_state_change)
-            return True
-    
-    def ai_update(self, wolrd_ctx = None, delta : float = 1.0):
-        pass
+	def on_clicked(self)->bool:
+		if True:
+			#Note: no logic here, so returning false
+			#below is an example of a change in state and a vaild clickable object
+			return False
+		else:
+			self.notify(self.notify_state_change)
+			return True
+	
+	def ai_update(self, wolrd_ctx = None, delta : float = 1.0):
+		pass
 
-    def notify(self,notify_dict):
-        for listerner in notify_dict:
-                notify_dict[listerner](self)
+	def notify(self,notify_dict):
+		for listerner in notify_dict:
+				notify_dict[listerner](self)
 
-    def set_direction(self,x:float=0.0,y:float=0.0):
-        self.direction[0] = x
-        self.direction[1] = y
+	def set_direction(self,x:float=0.0,y:float=0.0):
+		self.direction[0] = x
+		self.direction[1] = y
 
-    def move_to(self,x:float=0.0,y:float=0.0, x_speed:float=1.0, y_speed:float=1.0):
-        
-        direction = self.normalize(x - self.x, y - self.y)
-        self.set_direction(direction[0],direction[1])
-        self.x += self.direction[0] * x_speed
-        self.y += self.direction[1] * y_speed
+	def move_to(self,x:float=0.0,y:float=0.0, x_speed:float=1.0, y_speed:float=1.0):
+		
+		direction = self.normalize(x - self.x, y - self.y)
+		self.set_direction(direction[0],direction[1])
+		self.x += self.direction[0] * x_speed
+		self.y += self.direction[1] * y_speed
 
-    def vector_magnitude(self,x:float=0.0, y:float=0.0) -> float:
-        return math.sqrt(x * x + y * y)
+	def vector_magnitude(self,x:float=0.0, y:float=0.0) -> float:
+		return math.sqrt(x * x + y * y)
 
-    def normalize(self,x:float=0.0, y:float=0.0) -> list[float]:
-        return_value = [x,y]
-        if x != 0 and y != 0:
-            magnitude = self.vector_magnitude(x,y)
-            return_value[0] = x/magnitude
-            return_value[1] = y/magnitude
-        return return_value
+	def normalize(self,x:float=0.0, y:float=0.0) -> list[float]:
+		return_value = [x,y]
+		if x != 0 and y != 0:
+			magnitude = self.vector_magnitude(x,y)
+			return_value[0] = x/magnitude
+			return_value[1] = y/magnitude
+		return return_value
 
-    def __str__(self):
-        return ("Canvas_Object")
+	def __str__(self):
+		return ("Canvas_Object")
 
 #FISH
 class AI_STATE(IntEnum):
-    IDLE = 0
-    SWIMING = 1
-    PANICKED = 2
-    HOOKED = 3
-    SUBMERGING = 4
-    SUBMERGED = 5
-    SURFACING = 6
+	IDLE = 0
+	SWIMING = 1
+	PANICKED = 2
+	HOOKED = 3
+	SUBMERGING = 4
+	SUBMERGED = 5
+	SURFACING = 6
 
 
 class Fish(Canvas_Object):
-    def __init__(self, x:float=0, y:float=0, width:float=1, height:float=1,sprite=None, animation_data = {}, name:str="Fish", dialog_data = None):
-        super().__init__(x,y,width,height,sprite,animation_data,name,dialog_data)
-        self.ai_state : AI_STATE = AI_STATE.IDLE
-        self.animation = "swim_right"
-        self.speed = [3.0,1.0]
-        self.speed_mod : float = 1.0
-        self.move_location = [0,0]
-        self.default_animation_speed : float = 3.0 
-        self.weight : float = 1.0
+	def __init__(self, x:float=0, y:float=0, width:float=1, height:float=1,sprite=None, animation_data = {}, name:str="Fish", dialog_data = None):
+		super().__init__(x,y,width,height,sprite,animation_data,name,dialog_data)
+		self.ai_state : AI_STATE = AI_STATE.IDLE
+		self.animation = "swim_right"
+		self.speed = [3.0,1.0]
+		self.speed_mod : float = 1.0
+		self.move_location = [0,0]
+		self.default_animation_speed : float = 3.0 
+		self.weight : float = 1.0
 
-        self.wait_time : float = 0.0
-        self.panic_time : float = 0.0
-        self.submerge_time : float = 0.0
-        self.submerge_depth : float = 0.0
-        self.target = None #if not hooked, then will use this to try to swim to or decide to ignore. if hooked, then will follow/stick-to it
+		self.wait_time : float = 0.0
+		self.panic_time : float = 0.0
+		self.submerge_time : float = 0.0
+		self.submerge_depth : float = 0.0
+		self.target = None #if not hooked, then will use this to try to swim to or decide to ignore. if hooked, then will follow/stick-to it
 
-        self.stamina : float = 100.0
-        self.stamina_regen : float = 0.1 #this is base off of seconds. so delta of 0.1 would regen 0.01 per tick
-    
-    def on_clicked(self)->bool:
-        self.set_ai_state(AI_STATE.PANICKED)
-        return True
+		self.stamina : float = 100.0
+		self.stamina_regen : float = 0.1 #this is base off of seconds. so delta of 0.1 would regen 0.01 per tick
+	
+	def on_clicked(self)->bool:
+		self.set_ai_state(AI_STATE.PANICKED)
+		return True
 
-    
-    def ai_update(self,wolrd_ctx = None, delta : float = 1.0):
-        if self.ai_state == AI_STATE.IDLE:
-            self.wait_update(delta)
-            pass
-        elif self.ai_state == AI_STATE.SWIMING:
-            if self.swiming_update(delta):
-                if self.target != None:
-                    length = self.vector_magnitude(self.target.x - self.x ,self.target.y - self.y)
-                    if length < 8:
-                        self.message_handler(self,"Bite", self.name)
-                    else:
-                        self.set_ai_state(AI_STATE.IDLE)
-                else:
-                    self.set_ai_state(AI_STATE.IDLE)
-            pass
-        elif self.ai_state == AI_STATE.HOOKED:
-            self.hook_update(delta)
-            
-        elif self.ai_state == AI_STATE.PANICKED:
-            if self.swiming_update(delta):
-                self.set_random_location()
-            self.panic_update(delta)
+	
+	def ai_update(self,wolrd_ctx = None, delta : float = 1.0):
+		if self.ai_state == AI_STATE.IDLE:
+			self.wait_update(delta)
+			pass
+		elif self.ai_state == AI_STATE.SWIMING:
+			if self.swiming_update(delta):
+				if self.target != None:
+					length = self.vector_magnitude(self.target.x - self.x ,self.target.y - self.y)
+					if length < 8:
+						self.message_handler(self,"Bite", self.name)
+					else:
+						self.set_ai_state(AI_STATE.IDLE)
+				else:
+					self.set_ai_state(AI_STATE.IDLE)
+			pass
+		elif self.ai_state == AI_STATE.HOOKED:
+			self.hook_update(delta)
+			
+		elif self.ai_state == AI_STATE.PANICKED:
+			if self.swiming_update(delta):
+				self.set_random_location()
+			self.panic_update(delta)
 
-        elif self.ai_state == AI_STATE.SUBMERGED:
-            if self.swiming_update(delta):
-                self.set_random_location()
-            self.submerge_update(delta)
-            pass
-        elif self.ai_state == AI_STATE.SURFACING:
-            if self.swiming_update(delta):
-                self.set_random_location()
-            self.surfacing_update(delta)
-            pass
-        elif self.ai_state == AI_STATE.SUBMERGING:
-            if self.swiming_update(delta):
-                self.set_random_location()
-            self.submerging_update(delta)
-        
-        self.animation_speed = self.default_animation_speed * self.speed_mod
+		elif self.ai_state == AI_STATE.SUBMERGED:
+			if self.swiming_update(delta):
+				self.set_random_location()
+			self.submerge_update(delta)
+			pass
+		elif self.ai_state == AI_STATE.SURFACING:
+			if self.swiming_update(delta):
+				self.set_random_location()
+			self.surfacing_update(delta)
+			pass
+		elif self.ai_state == AI_STATE.SUBMERGING:
+			if self.swiming_update(delta):
+				self.set_random_location()
+			self.submerging_update(delta)
+		
+		self.animation_speed = self.default_animation_speed * self.speed_mod
 
 
-        if wolrd_ctx != None and (self.ai_state == AI_STATE.SWIMING or self.ai_state == AI_STATE.IDLE):
-            if "bobber" in wolrd_ctx:
-                bobber = wolrd_ctx["bobber"]
-                bobber_x = bobber.x - bobber.width/2 
-                bobber_y = bobber.y - bobber.height/2 
-                dist_from_bobber = self.vector_magnitude(bobber_x - self.x ,bobber_y - self.y)
-                if dist_from_bobber < 32: #note this value may be something gain from the bobber data modifed by the fish senses
-                    if round(bobber_x) != round(self.x) and round(bobber_y) != round(self.y):
-                        self.move_location[0] = bobber_x
-                        self.move_location[1] = bobber_y
-                    else:
-                        self.message_handler(self,"Bite", self.name)
+		if wolrd_ctx != None and (self.ai_state == AI_STATE.SWIMING or self.ai_state == AI_STATE.IDLE):
+			if "bobber" in wolrd_ctx:
+				bobber = wolrd_ctx["bobber"]
+				bobber_x = bobber.x - bobber.width/2 
+				bobber_y = bobber.y - bobber.height/2 
+				dist_from_bobber = self.vector_magnitude(bobber_x - self.x ,bobber_y - self.y)
+				if dist_from_bobber < 32: #note this value may be something gain from the bobber data modifed by the fish senses
+					if round(bobber_x) != round(self.x) and round(bobber_y) != round(self.y):
+						self.move_location[0] = bobber_x
+						self.move_location[1] = bobber_y
+					else:
+						self.message_handler(self,"Bite", self.name)
 
-    def hook_update(self,delta : float = 0.1):
-        if self.target == None:
-            self.set_ai_state(AI_STATE.IDLE)
-        else:
-            length = self.vector_magnitude(self.target.x - self.x , self.target.y - self.y)
-            if length > 32:
-                self.target = None
-            else:
-                self.x = self.target.x - self.target.width
-                self.y = self.target.y - self.target.height
+	def hook_update(self,delta : float = 0.1):
+		if self.target == None:
+			self.set_ai_state(AI_STATE.IDLE)
+		else:
+			length = self.vector_magnitude(self.target.x - self.x , self.target.y - self.y)
+			if length > 32:
+				self.target = None
+			else:
+				self.x = self.target.x - self.target.width
+				self.y = self.target.y - self.target.height
 
-    def swiming_update(self, delta : float = 0.1) -> bool:
-        if round(self.move_location[0]) != round(self.x) and round(self.move_location[1]) != round(self.y):
-            self.move_to(self.move_location[0],self.move_location[1],self.speed[0]*self.speed_mod,self.speed[1]*self.speed_mod)
-        else:
-            return True
-        return False
-    
-    def wait_update(self,delta : float = 0.1):
-        if self.wait_time > 0.0:
-            self.wait_time =  self.wait_time - delta 
-        else:
-            if self.target != None:
-                self.move_location[0] = self.target.x - self.target.width
-                self.move_location[1] = self.target.y - self.target.height
-            else:
-                self.set_random_location()
-            self.set_ai_state(AI_STATE.SWIMING)
-    
-    def panic_update(self,delta : float = 0.1):
-        if self.panic_time > 0.0:
-            self.panic_time =  self.panic_time - delta 
-        else:
-            self.set_ai_state(AI_STATE.IDLE)
+	def swiming_update(self, delta : float = 0.1) -> bool:
+		if round(self.move_location[0]) != round(self.x) and round(self.move_location[1]) != round(self.y):
+			self.move_to(self.move_location[0],self.move_location[1],self.speed[0]*self.speed_mod,self.speed[1]*self.speed_mod)
+		else:
+			return True
+		return False
+	
+	def wait_update(self,delta : float = 0.1):
+		if self.wait_time > 0.0:
+			self.wait_time =  self.wait_time - delta 
+		else:
+			if self.target != None:
+				self.move_location[0] = self.target.x - self.target.width
+				self.move_location[1] = self.target.y - self.target.height
+			else:
+				self.set_random_location()
+			self.set_ai_state(AI_STATE.SWIMING)
+	
+	def panic_update(self,delta : float = 0.1):
+		if self.panic_time > 0.0:
+			self.panic_time =  self.panic_time - delta 
+		else:
+			self.set_ai_state(AI_STATE.IDLE)
 
-    def submerge_update(self,delta : float = 0.1):
-        if self.submerge_time > 0.0:
-            self.submerge_time =  self.submerge_time - delta 
-        else:
-            self.set_ai_state(AI_STATE.SURFACING)
-    
-    def surfacing_update(self,delta : float = 0.1):
-        if self.submerge_depth < 0.0:
-            self.submerge_depth =  self.submerge_depth + delta * random.random()
-        else:
-            self.set_ai_state(AI_STATE.IDLE)
+	def submerge_update(self,delta : float = 0.1):
+		if self.submerge_time > 0.0:
+			self.submerge_time =  self.submerge_time - delta 
+		else:
+			self.set_ai_state(AI_STATE.SURFACING)
+	
+	def surfacing_update(self,delta : float = 0.1):
+		if self.submerge_depth < 0.0:
+			self.submerge_depth =  self.submerge_depth + delta * random.random()
+		else:
+			self.set_ai_state(AI_STATE.IDLE)
 
-    def submerging_update(self,delta : float = 0.1):
-        if self.submerge_depth > -1.0:
-            self.submerge_depth =  self.submerge_depth - delta * random.random()
-        else:
-            self.set_ai_state(AI_STATE.SUBMERGED)
+	def submerging_update(self,delta : float = 0.1):
+		if self.submerge_depth > -1.0:
+			self.submerge_depth =  self.submerge_depth - delta * random.random()
+		else:
+			self.set_ai_state(AI_STATE.SUBMERGED)
 
-    def set_ai_state(self,new_state:int):
-        if self.ai_state != new_state:
-            self.ai_state = new_state
-            if self.ai_state == AI_STATE.IDLE:
-                self.wait_time = random.randint(1,25)
-            elif self.ai_state == AI_STATE.PANICKED:
-                self.panic_time = random.randint(5,50)
-                self.speed_mod = 2.0
-            elif self.ai_state == AI_STATE.SUBMERGED:
-                self.submerge_time = random.randint(5,50)
-                self.submerge_depth = -1.0
-            else:
-                self.speed_mod = 1.0
+	def set_ai_state(self,new_state:int):
+		if self.ai_state != new_state:
+			self.ai_state = new_state
+			if self.ai_state == AI_STATE.IDLE:
+				self.wait_time = random.randint(1,25)
+			elif self.ai_state == AI_STATE.PANICKED:
+				self.panic_time = random.randint(5,50)
+				self.speed_mod = 2.0
+			elif self.ai_state == AI_STATE.SUBMERGED:
+				self.submerge_time = random.randint(5,50)
+				self.submerge_depth = -1.0
+			else:
+				self.speed_mod = 1.0
 
-    def set_direction(self,x:float=0.0,y:float=0.0):
-        super().set_direction(x,y)
-        if self.direction[0] > 0:
-            self.animation = "swim_right"
-        elif self.direction[0] < 0:
-            self.animation = "swim_left"
-    
-    def set_random_location(self,bounds = [0,0,0,0]):
-        if self.navigation != None and bounds == [0,0,0,0]:
-            if "bounds" in self.navigation:
-                bounds = self.navigation["bounds"]
-        self.move_location[0] = random.randrange(bounds[0],bounds[2])
-        self.move_location[1] = random.randrange(bounds[1],bounds[3])
+	def set_direction(self,x:float=0.0,y:float=0.0):
+		super().set_direction(x,y)
+		if self.direction[0] > 0:
+			self.animation = "swim_right"
+		elif self.direction[0] < 0:
+			self.animation = "swim_left"
+	
+	def set_random_location(self,bounds = [0,0,0,0]):
+		if self.navigation != None and bounds == [0,0,0,0]:
+			if "bounds" in self.navigation:
+				bounds = self.navigation["bounds"]
+		self.move_location[0] = random.randrange(bounds[0],bounds[2])
+		self.move_location[1] = random.randrange(bounds[1],bounds[3])
 
-    def render(self, ctx,x_scale: float = 1.0, y_scale: float = 1.0, delta : float = 1.0):
-        ctx.globalAlpha = max(self.submerge_depth+1,1)
-        super().render(ctx, x_scale, y_scale, delta)
-        ctx.globalAlpha = 1.0
+	def render(self, ctx,x_scale: float = 1.0, y_scale: float = 1.0, delta : float = 1.0):
+		ctx.globalAlpha = max(self.submerge_depth+1,1)
+		super().render(ctx, x_scale, y_scale, delta)
+		ctx.globalAlpha = 1.0
 
-    def __str__(self):
-        return self.name
+	def __str__(self):
+		return self.name
 
 #SCENE
 class Scene:
-    def __init__(self, id, events):
-        self._events = {} #moving events here so thet can be unquie
-        print("test")
-        self.source = document.getElementById(id)
-        self.bounds = [0,0,self.source.width,self.source.height]
-        for event_id in events:
-            self.add_event(event_id,events[event_id])
+	def __init__(self, id, events):
+		self._events = {} #moving events here so thet can be unquie
+		print("test")
+		self.source = document.getElementById(id)
+		self.bounds = [0,0,self.source.width,self.source.height]
+		for event_id in events:
+			self.add_event(event_id,events[event_id])
 
-    def __del__(self):
-        event_ref = self._events.copy()
-        for event_id in event_ref:
-            self.remove_event(event_id)
+	def __del__(self):
+		event_ref = self._events.copy()
+		for event_id in event_ref:
+			self.remove_event(event_id)
 
-    def add_event(self, event_id, event):
-        event_proxy = create_proxy(event)
-        self.source.addEventListener(event_id, event_proxy)
-        self._events[event_id] = event_proxy
+	def add_event(self, event_id, event):
+		event_proxy = create_proxy(event)
+		self.source.addEventListener(event_id, event_proxy)
+		self._events[event_id] = event_proxy
 
-    def remove_event(self, event_id):
-        event_proxy = self._events[event_id]
-        self.source.removeEventListener(event_id, event_proxy)
-        event_proxy.destroy()
-        del self._events[event_id]
+	def remove_event(self, event_id):
+		event_proxy = self._events[event_id]
+		self.source.removeEventListener(event_id, event_proxy)
+		event_proxy.destroy()
+		del self._events[event_id]
 
-    def handle_event(self, event):
-        pass
+	def handle_event(self, event):
+		pass
 
-    def update(self):
-        pass
+	def update(self):
+		pass
 
 class Canvas_Scene(Scene):
-    def __init__(self, id, events):
-        super().__init__(id, events)
-        self.objects = []
-        self.is_mousedown = False #this is a shared flag so that mouse down and up events can be handled without recreating the logic
+	def __init__(self, id, events):
+		super().__init__(id, events)
+		self.objects = []
+		self.is_mousedown = False #this is a shared flag so that mouse down and up events can be handled without recreating the logic
 
-    def render(self, delta : float = 1.0):
-        ctx = self.source.getContext("2d")
-        width = self.source.width
-        height = self.source.height
-        ctx.reset()
+	def render(self, delta : float = 1.0):
+		ctx = self.source.getContext("2d")
+		width = self.source.width
+		height = self.source.height
+		ctx.reset()
 
-        for obj in self.objects:
-            obj.ai_update(None,delta)
-            obj.render(ctx, 1.0, 1.0, delta)
+		for obj in self.objects:
+			obj.ai_update(None,delta)
+			obj.render(ctx, 1.0, 1.0, delta)
 
-    def message_handler(self,object,type,message):
-        pass
+	def message_handler(self,object,type,message):
+		pass
 
-    def collison_handler(self,x:float=0,y:float=0,z:float=0,data=None)-> dict:
-        max_x =self.bounds[2]
-        max_y = self.bounds[3]
-        data = {"blocked":False}
-        if x >= max_x or x <= self.bounds[0]:
-            data["blocked"] = True
-            data["x_blocked"] = True
-        if y >= max_y or y <= self.bounds[1]:
-            data["blocked"] = True
-            data["y_blocked"] = True
-        return data
+	def collison_handler(self,x:float=0,y:float=0,z:float=0,data=None)-> dict:
+		max_x =self.bounds[2]
+		max_y = self.bounds[3]
+		data = {"blocked":False}
+		if x >= max_x or x <= self.bounds[0]:
+			data["blocked"] = True
+			data["x_blocked"] = True
+		if y >= max_y or y <= self.bounds[1]:
+			data["blocked"] = True
+			data["y_blocked"] = True
+		return data
 
-    def assign_object(self,obj):
-        self.objects.append(obj)
-        obj.notify_state_change[self]=self.on_object_state_change
-        obj.collison_handler = self.collison_handler
-        obj.message_handler = self.message_handler
+	def assign_object(self,obj):
+		self.objects.append(obj)
+		obj.notify_state_change[self]=self.on_object_state_change
+		obj.collison_handler = self.collison_handler
+		obj.message_handler = self.message_handler
 
-    def _mousedown(self) -> bool:
-        state_change = self.is_mousedown != True
-        self.is_mousedown = True
-        return state_change
+	def _mousedown(self) -> bool:
+		state_change = self.is_mousedown != True
+		self.is_mousedown = True
+		return state_change
 
-    def _mouseup(self)-> bool:
-        state_change = self.is_mousedown != False
-        self.is_mousedown = False
-        return state_change
+	def _mouseup(self)-> bool:
+		state_change = self.is_mousedown != False
+		self.is_mousedown = False
+		return state_change
 
-            
+			
 #MAIN SCENE
 class Main_Scene(Canvas_Scene):
-    
-    def __init__(self, id, events):
-        super().__init__(id, events)
-        self.objects = []
+	
+	def __init__(self, id, events):
+		super().__init__(id, events)
+		self.objects = []
 
-        self.title_text:str = "Title"
-        self.title_source = None
-        self.dialog_source = None
-    
+		self.title_text:str = "Title"
+		self.title_source = None
+		self.dialog_source = None
+	
 
-    def set_title(self, title:str):
-        if self.title_source != None:
-            self.title_source.textContent = title
+	def set_title(self, title:str):
+		if self.title_source != None:
+			self.title_source.textContent = title
 
-    def set_dialog(self, dialog:str):
-        if self.dialog_source != None:
-            self.dialog_source.textContent = dialog
-            
+	def set_dialog(self, dialog:str):
+		if self.dialog_source != None:
+			self.dialog_source.textContent = dialog
+			
 
-    def on_object_state_change(self,obj):
-        self.render()
+	def on_object_state_change(self,obj):
+		self.render()
 
-    def handle_event(self, event):
+	def handle_event(self, event):
 		time_triggered = datetime.now()
-        if event.type == "mousedown" or event.type == "touchstart":
+		if event.type == "mousedown" or event.type == "touchstart":
 			bounds = self.source.getBoundingClientRect()
 			if event.type == "touchstart":
 				if len(event.touches) >= 0:
@@ -465,216 +465,216 @@ class Main_Scene(Canvas_Scene):
 				else:
 					#NOTE: may need a diffrent approch if this is ever called
 					return
-				else:
-					x = event.clientX - bounds.left
-					y = event.clientY - bounds.top
+			else:
+				x = event.clientX - bounds.left
+				y = event.clientY - bounds.top
 			for obj in self.objects:
-                if x >= obj.x and x <= obj.x + obj.width:
-                    if y >= obj.y and y <= obj.y + obj.height:
-                        if obj.on_clicked():
-                            break
+				if x >= obj.x and x <= obj.x + obj.width:
+					if y >= obj.y and y <= obj.y + obj.height:
+						if obj.on_clicked():
+							break
 
-    def render(self, delta : float = 1.0):
-        ctx = self.source.getContext("2d")
-        width = self.source.width
-        height = self.source.height
-        ctx.reset()
+	def render(self, delta : float = 1.0):
+		ctx = self.source.getContext("2d")
+		width = self.source.width
+		height = self.source.height
+		ctx.reset()
 
-        for obj in self.objects:
-            obj.ai_update(None,delta)
-            obj.render(ctx,1.0,1.0,delta)
-    
-    def message_handler(self,object,type,message):
-        if type == "Say":
-            self.set_dialog(str(object.data["name"]) + " : " + str(message))
-        
-    def __str__(self):
-        return ("Main_Scene")
-    
+		for obj in self.objects:
+			obj.ai_update(None,delta)
+			obj.render(ctx,1.0,1.0,delta)
+	
+	def message_handler(self,object,type,message):
+		if type == "Say":
+			self.set_dialog(str(object.data["name"]) + " : " + str(message))
+		
+	def __str__(self):
+		return ("Main_Scene")
+	
 class INTERACTION_STATE(IntEnum):
-    READY = 0
-    REELING = 1
-    CASTED = 2 
-    HOOKED = 3 
-    CATCH = 4
+	READY = 0
+	REELING = 1
+	CASTED = 2 
+	HOOKED = 3 
+	CATCH = 4
 
 class Fishing_Scene(Canvas_Scene):
-    def __init__(self, id, events):
-        super().__init__(id, events)
-        self.objects = []
-        self.title_text:str = "Title"
-        self.title_source = None
-        self.dialog_source = None
-        self.reeling_strength = 0.0
-        self.bobber = Bobber(0,0,8,8)
-        self.bounds = [0,150,self.source.width,min(300,self.source.height)]
-        self.interaction_state : INTERACTION_STATE = INTERACTION_STATE.READY
-        self.fish_data = {} 
-        self.fish_caught : Fish = None 
-        self.tagged_fish = [] 
-        
-    def set_title(self, title:str):
-        if self.title_source != None:
-            self.title_source.textContent = title
+	def __init__(self, id, events):
+		super().__init__(id, events)
+		self.objects = []
+		self.title_text:str = "Title"
+		self.title_source = None
+		self.dialog_source = None
+		self.reeling_strength = 0.0
+		self.bobber = Bobber(0,0,8,8)
+		self.bounds = [0,150,self.source.width,min(300,self.source.height)]
+		self.interaction_state : INTERACTION_STATE = INTERACTION_STATE.READY
+		self.fish_data = {} 
+		self.fish_caught : Fish = None 
+		self.tagged_fish = [] 
+		
+	def set_title(self, title:str):
+		if self.title_source != None:
+			self.title_source.textContent = title
 
-    def set_dialog(self, dialog:str):
-        if self.dialog_source != None:
-            self.dialog_source.textContent = dialog
+	def set_dialog(self, dialog:str):
+		if self.dialog_source != None:
+			self.dialog_source.textContent = dialog
 
-    def handle_event(self, event):
-        ctx = self.source.getContext("2d")
+	def handle_event(self, event):
+		ctx = self.source.getContext("2d")
 
-        if event.type == "mousedown" or event.type == "touchstart":
-            bounds = self.source.getBoundingClientRect()
-            x = event.clientX - bounds.left
-            y = event.clientY - bounds.top
-            self.on_cast(x,y)
+		if event.type == "mousedown" or event.type == "touchstart":
+			bounds = self.source.getBoundingClientRect()
+			x = event.clientX - bounds.left
+			y = event.clientY - bounds.top
+			self.on_cast(x,y)
 
-    def on_cast(self, x : float = 0.0, y : float = 0.0):
-        if self.interaction_state == INTERACTION_STATE.READY:
-            for obj in self.objects:
-                dist_x = x - obj.x
-                dist_y = y - obj.y
-                dist = math.sqrt(dist_x * dist_x + dist_y  * dist_y )
-                if dist < 16:
-                    obj.set_ai_state(AI_STATE.PANICKED)
-                    #obj.on_clicked()
-            if x > self.bounds[0] and x < self.bounds[2] and y > self.bounds[1] and y < self.bounds[3]:
-                self.bobber.x = x
-                self.bobber.y = y
-                self.interaction_state = INTERACTION_STATE.REELING
-                self.set_dialog("")
-        elif self.interaction_state == INTERACTION_STATE.REELING:
-            self.on_reel()
+	def on_cast(self, x : float = 0.0, y : float = 0.0):
+		if self.interaction_state == INTERACTION_STATE.READY:
+			for obj in self.objects:
+				dist_x = x - obj.x
+				dist_y = y - obj.y
+				dist = math.sqrt(dist_x * dist_x + dist_y  * dist_y )
+				if dist < 16:
+					obj.set_ai_state(AI_STATE.PANICKED)
+					#obj.on_clicked()
+			if x > self.bounds[0] and x < self.bounds[2] and y > self.bounds[1] and y < self.bounds[3]:
+				self.bobber.x = x
+				self.bobber.y = y
+				self.interaction_state = INTERACTION_STATE.REELING
+				self.set_dialog("")
+		elif self.interaction_state == INTERACTION_STATE.REELING:
+			self.on_reel()
 
-    def on_hook(self,fish:Fish = None):
-        if fish != None and self.fish_caught == None:
-            self.fish_caught = fish
-            if self.fish_caught.name in self.fish_data.keys():
-                pass
-            else:
-                self.generate_new_fish(fish)
-            self.fish_caught.set_ai_state(AI_STATE.HOOKED)
-            self.set_dialog(str(fish.name) + " is hooked.")
+	def on_hook(self,fish:Fish = None):
+		if fish != None and self.fish_caught == None:
+			self.fish_caught = fish
+			if self.fish_caught.name in self.fish_data.keys():
+				pass
+			else:
+				self.generate_new_fish(fish)
+			self.fish_caught.set_ai_state(AI_STATE.HOOKED)
+			self.set_dialog(str(fish.name) + " is hooked.")
 
-    def on_catch(self):
-        if self.fish_caught != None:
-            weight = "{:.2f}".format(self.fish_caught.weight)
-            self.set_dialog(str(self.fish_caught.name) + " caught weighing " + weight +"kg")
-            self.fish_caught.set_ai_state(AI_STATE.SUBMERGED)
-            self.fish_caught = None
-        self.interaction_state = INTERACTION_STATE.READY
-        pass
+	def on_catch(self):
+		if self.fish_caught != None:
+			weight = "{:.2f}".format(self.fish_caught.weight)
+			self.set_dialog(str(self.fish_caught.name) + " caught weighing " + weight +"kg")
+			self.fish_caught.set_ai_state(AI_STATE.SUBMERGED)
+			self.fish_caught = None
+		self.interaction_state = INTERACTION_STATE.READY
+		pass
 
-    def on_reel(self) :
-        self.reeling_strength = min(self.reeling_strength + 1,25)
+	def on_reel(self) :
+		self.reeling_strength = min(self.reeling_strength + 1,25)
 
-    def reeling_update(self,delta):
-        center = self.source.width/2
-        fish_strength = 0.0
-        if self.fish_caught != None:
-            fish_strength = random.random()*self.fish_caught.weight
-        reeling_strength = (self.reeling_strength - fish_strength) * delta
-        clamped_reeling_strength = min(max(reeling_strength,0.01),4) 
-        if reeling_strength > 0:
-            self.bobber.move_to(center,self.source.height,clamped_reeling_strength,clamped_reeling_strength)
-            if self.is_reeled_in():
-                self.interaction_state = INTERACTION_STATE.READY
-                self.reeling_strength = 0
-                self.on_catch()
-        elif reeling_strength < 0:
-            pass
-        if self.reeling_strength > 0:
-            self.reeling_strength =  max(self.reeling_strength - delta,0)
-            
-    def is_reeled_in(self):
-        return self.bobber.y >= self.source.height
-    
-    def is_holding_button(self,x:float=0.0,y:float=0.0) -> bool:
-        if self.is_mousedown:
-            button_bounds = self.get_button_bounds()
-            if x >= button_bounds[0] and x <= button_bounds[0]+button_bounds[2]:
-                if y >= button_bounds[1] and y <= button_bounds[1]+button_bounds[3]:
-                    return True
-        return False
+	def reeling_update(self,delta):
+		center = self.source.width/2
+		fish_strength = 0.0
+		if self.fish_caught != None:
+			fish_strength = random.random()*self.fish_caught.weight
+		reeling_strength = (self.reeling_strength - fish_strength) * delta
+		clamped_reeling_strength = min(max(reeling_strength,0.01),4) 
+		if reeling_strength > 0:
+			self.bobber.move_to(center,self.source.height,clamped_reeling_strength,clamped_reeling_strength)
+			if self.is_reeled_in():
+				self.interaction_state = INTERACTION_STATE.READY
+				self.reeling_strength = 0
+				self.on_catch()
+		elif reeling_strength < 0:
+			pass
+		if self.reeling_strength > 0:
+			self.reeling_strength =  max(self.reeling_strength - delta,0)
+			
+	def is_reeled_in(self):
+		return self.bobber.y >= self.source.height
+	
+	def is_holding_button(self,x:float=0.0,y:float=0.0) -> bool:
+		if self.is_mousedown:
+			button_bounds = self.get_button_bounds()
+			if x >= button_bounds[0] and x <= button_bounds[0]+button_bounds[2]:
+				if y >= button_bounds[1] and y <= button_bounds[1]+button_bounds[3]:
+					return True
+		return False
 
-    def render(self, delta : float = 1.0):
-        ctx = self.source.getContext("2d")
-        width = self.source.width
-        height = self.source.height
-        
-        ctx.reset()
-        self.reeling_update(delta)
+	def render(self, delta : float = 1.0):
+		ctx = self.source.getContext("2d")
+		width = self.source.width
+		height = self.source.height
+		
+		ctx.reset()
+		self.reeling_update(delta)
 
-        for obj in self.objects:
-            ratio = obj.y / self.bounds[3]
-            if self.interaction_state == INTERACTION_STATE.REELING and self.fish_caught == None and obj.target == None:
-                length = obj.vector_magnitude(self.bobber.x - obj.x ,self.bobber.y - obj.y)
-                if length < 32:
-                    obj.target = self.bobber
-                    self.tagged_fish.append(obj)
-                else:
-                    obj.targer = None
-                obj.ai_update({"bobber":self.bobber},delta)
-            elif self.fish_caught != None and self.tagged_fish:
-                fish = self.tagged_fish.pop()
-                if fish != self.fish_caught:
-                    fish.target = None
-            else:
-                obj.ai_update(None,delta)
-            obj.render(ctx,ratio,ratio,delta)
+		for obj in self.objects:
+			ratio = obj.y / self.bounds[3]
+			if self.interaction_state == INTERACTION_STATE.REELING and self.fish_caught == None and obj.target == None:
+				length = obj.vector_magnitude(self.bobber.x - obj.x ,self.bobber.y - obj.y)
+				if length < 32:
+					obj.target = self.bobber
+					self.tagged_fish.append(obj)
+				else:
+					obj.targer = None
+				obj.ai_update({"bobber":self.bobber},delta)
+			elif self.fish_caught != None and self.tagged_fish:
+				fish = self.tagged_fish.pop()
+				if fish != self.fish_caught:
+					fish.target = None
+			else:
+				obj.ai_update(None,delta)
+			obj.render(ctx,ratio,ratio,delta)
 
-        if self.interaction_state == INTERACTION_STATE.REELING:
-            ratio = self.bobber.y / self.bounds[3]
-            self.bobber.render(ctx,ratio,ratio)
+		if self.interaction_state == INTERACTION_STATE.REELING:
+			ratio = self.bobber.y / self.bounds[3]
+			self.bobber.render(ctx,ratio,ratio)
 
-    def draw_bobber(self,ctx):
-        self.bobber.render(ctx)
+	def draw_bobber(self,ctx):
+		self.bobber.render(ctx)
 
-    def pick_fish_type(self):
-        fish_types = self.fish_data.keys()
-        if fish_types:
-            return random.choice(list(self.fish_data.keys()))
-        return None
-    
-    def generate_new_fish(self,fish):
-        new_name = self.pick_fish_type()
-        if new_name != None:
-            min_size = self.fish_data[new_name]["min_weight"]
-            max_size = self.fish_data[new_name]["max_weight"]
-            fish.name = new_name
-            fish.weight = random.random() * (max_size - min_size) + min_size
+	def pick_fish_type(self):
+		fish_types = self.fish_data.keys()
+		if fish_types:
+			return random.choice(list(self.fish_data.keys()))
+		return None
+	
+	def generate_new_fish(self,fish):
+		new_name = self.pick_fish_type()
+		if new_name != None:
+			min_size = self.fish_data[new_name]["min_weight"]
+			max_size = self.fish_data[new_name]["max_weight"]
+			fish.name = new_name
+			fish.weight = random.random() * (max_size - min_size) + min_size
 
-    def message_handler(self,object,type,message):
-        if type == "Bite":
-            self.on_hook(object)
+	def message_handler(self,object,type,message):
+		if type == "Bite":
+			self.on_hook(object)
 
-    def assign_object(self,obj):
-        super().assign_object(obj)
-        obj.navigation = { "bounds": self.bounds}
+	def assign_object(self,obj):
+		super().assign_object(obj)
+		obj.navigation = { "bounds": self.bounds}
 
-    def on_object_state_change(self,obj):
-        pass
-        
-    def __str__(self):
-        return ("Main_Scene")
-    
+	def on_object_state_change(self,obj):
+		pass
+		
+	def __str__(self):
+		return ("Main_Scene")
+	
 class Bobber(Canvas_Object):
-    def __init__(self, x:float=0, y:float=0, width:float=1, height:float=1,sprite=None, animation_data = {}, name:str="Bobber", dialog_data = None):
-        super().__init__(x,y,width,height,sprite,animation_data,name,dialog_data)
-        self.move_location = [0,0]
+	def __init__(self, x:float=0, y:float=0, width:float=1, height:float=1,sprite=None, animation_data = {}, name:str="Bobber", dialog_data = None):
+		super().__init__(x,y,width,height,sprite,animation_data,name,dialog_data)
+		self.move_location = [0,0]
 
-    def render(self, ctx,x_scale=1.0, y_scale=1.0, delta : float = 1.0):
-        if self.sprite != None:
-            super().render(ctx,x_scale,y_scale)
-        else:
-            ctx.fillStyle = 'blue'
-            ctx.fillRect(
-                self.x-self.width/2,
-                self.y-self.height/2,
-                self.width * x_scale,
-                self.height * y_scale
-            )
+	def render(self, ctx,x_scale=1.0, y_scale=1.0, delta : float = 1.0):
+		if self.sprite != None:
+			super().render(ctx,x_scale,y_scale)
+		else:
+			ctx.fillStyle = 'blue'
+			ctx.fillRect(
+				self.x-self.width/2,
+				self.y-self.height/2,
+				self.width * x_scale,
+				self.height * y_scale
+			)
 
 #FISHING MAIN
 
@@ -695,113 +695,113 @@ common_events = {
 }
 
 if os.path.exists('animation_data.json'):
-    with open('animation_data.json', 'r') as file:
-	    animation_data = json.load(file)
+	with open('animation_data.json', 'r') as file:
+		animation_data = json.load(file)
 else:
   animation_data = {
-    "default": {
-        "tile_x":32,
-        "tile_y":32,
-        "idle": {"frames":[[0,0]]},
-        "walk": {"frames":[[1,0],[1,1],[1,2],[1,3]],"frame_delay":0.2},
-        "sit": {"frames":[[2,0]]},
-        "lay": {"frames":[[3,0]]}
-    },
-    "fish": {
-        "tile_x":16,
-        "tile_y":16,
-        "idle": {"frames":[[0,0]]},
-        "swim_left": {"frames":[[0,0],[0,1],[0,2],[0,3]],"frame_delay":1.0},
-        "swim_right": {"frames":[[1,0],[1,1],[1,2],[1,3]],"frame_delay":1.0}
-    }
-}      
+	"default": {
+		"tile_x":32,
+		"tile_y":32,
+		"idle": {"frames":[[0,0]]},
+		"walk": {"frames":[[1,0],[1,1],[1,2],[1,3]],"frame_delay":0.2},
+		"sit": {"frames":[[2,0]]},
+		"lay": {"frames":[[3,0]]}
+	},
+	"fish": {
+		"tile_x":16,
+		"tile_y":16,
+		"idle": {"frames":[[0,0]]},
+		"swim_left": {"frames":[[0,0],[0,1],[0,2],[0,3]],"frame_delay":1.0},
+		"swim_right": {"frames":[[1,0],[1,1],[1,2],[1,3]],"frame_delay":1.0}
+	}
+}	  
 if os.path.exists('fish_data.json'):
-    with open('fish_data.json', 'r') as file:
-	    fish_data = json.load(file)
+	with open('fish_data.json', 'r') as file:
+		fish_data = json.load(file)
 else:
   fish_data = {
-    "Carp": {
-        "min_weight":1.0,
-        "max_weight":15.0,
-        "aggressiveness":1.0,
-        "diet":["vegeatbles","bread","nuts","worms","cut_bait"],
-        "saltwater": False,
-        "detection_range":32.0,
-        "freshwater": True
-    },
-    "Catfish": {
-        "min_weight":0.5,
-        "max_weight":100.0,
-        "aggressiveness":1.0,
-        "diet":["live-bait","cut_bait"],
-        "saltwater": False,
-        "detection_range":32.0,
-        "freshwater": True
-    },
-    "Crappie": {
-        "min_weight":0.25,
-        "max_weight":0.75,
-        "aggressiveness":1.0,
-        "diet":["vegeatbles","bread","nuts","worms","cut_bait"],
-        "saltwater": False,
-        "detection_range":32.0,
-        "freshwater": True
-    },
-    "Trout": {
-        "min_weight": 1.0,
-        "max_weight": 8.0,
-        "aggressiveness":1.0,
-        "diet":["insects","small_fish","live_bait"],
-        "saltwater": False,
-        "detection_range":32.0,
-        "freshwater": True
-    },
-    "Largemouth Bass": {
-        "min_weight":0.5,
-        "max_weight":2.0,
-        "aggressiveness":1.0,
-        "diet":["insects","small_fish","live_bait","worms","cut_bait"],
-        "saltwater": False,
-        "detection_range":32.0,
-        "freshwater": True
-    },
-    "Salmon": {
-        "min_weight":3.0,
-        "max_weight":6.0,
-        "aggressiveness":1.0,
-        "diet":["insects","small_fish","live_bait","vegeatbles","bread","nuts","worms","cut_bait"],
-        "saltwater": True,
-        "detection_range":32.0,
-        "freshwater": True
-    },
-    "Smallmouth Bass": {
-        "min_weight":0.4,
-        "max_weight":2.4,
-        "aggressiveness":2.0,
-        "diet":["crayfish"],
-        "saltwater": False,
-        "detection_range":32.0,
-        "freshwater": True
-    },
-    "Sturgeon": {
-        "min_weight":160.0,
-        "max_weight":360.0,
-        "aggressiveness":2.0,
-        "diet":["crayfish","small_fish","worms","clams"],
-        "saltwater": False,
-        "detection_range":32.0,
-        "freshwater": True
-    },
-    "Walleye": {
-        "min_weight":4.0,
-        "max_weight":10.0,
-        "aggressiveness":1.0,
-        "diet":["small_fish","worms"],
-        "saltwater": False,
-        "detection_range":32.0,
-        "freshwater": True
-    }
-}      
+	"Carp": {
+		"min_weight":1.0,
+		"max_weight":15.0,
+		"aggressiveness":1.0,
+		"diet":["vegeatbles","bread","nuts","worms","cut_bait"],
+		"saltwater": False,
+		"detection_range":32.0,
+		"freshwater": True
+	},
+	"Catfish": {
+		"min_weight":0.5,
+		"max_weight":100.0,
+		"aggressiveness":1.0,
+		"diet":["live-bait","cut_bait"],
+		"saltwater": False,
+		"detection_range":32.0,
+		"freshwater": True
+	},
+	"Crappie": {
+		"min_weight":0.25,
+		"max_weight":0.75,
+		"aggressiveness":1.0,
+		"diet":["vegeatbles","bread","nuts","worms","cut_bait"],
+		"saltwater": False,
+		"detection_range":32.0,
+		"freshwater": True
+	},
+	"Trout": {
+		"min_weight": 1.0,
+		"max_weight": 8.0,
+		"aggressiveness":1.0,
+		"diet":["insects","small_fish","live_bait"],
+		"saltwater": False,
+		"detection_range":32.0,
+		"freshwater": True
+	},
+	"Largemouth Bass": {
+		"min_weight":0.5,
+		"max_weight":2.0,
+		"aggressiveness":1.0,
+		"diet":["insects","small_fish","live_bait","worms","cut_bait"],
+		"saltwater": False,
+		"detection_range":32.0,
+		"freshwater": True
+	},
+	"Salmon": {
+		"min_weight":3.0,
+		"max_weight":6.0,
+		"aggressiveness":1.0,
+		"diet":["insects","small_fish","live_bait","vegeatbles","bread","nuts","worms","cut_bait"],
+		"saltwater": True,
+		"detection_range":32.0,
+		"freshwater": True
+	},
+	"Smallmouth Bass": {
+		"min_weight":0.4,
+		"max_weight":2.4,
+		"aggressiveness":2.0,
+		"diet":["crayfish"],
+		"saltwater": False,
+		"detection_range":32.0,
+		"freshwater": True
+	},
+	"Sturgeon": {
+		"min_weight":160.0,
+		"max_weight":360.0,
+		"aggressiveness":2.0,
+		"diet":["crayfish","small_fish","worms","clams"],
+		"saltwater": False,
+		"detection_range":32.0,
+		"freshwater": True
+	},
+	"Walleye": {
+		"min_weight":4.0,
+		"max_weight":10.0,
+		"aggressiveness":1.0,
+		"diet":["small_fish","worms"],
+		"saltwater": False,
+		"detection_range":32.0,
+		"freshwater": True
+	}
+}	  
 
 scenes["canvas_fishing_room"] = Fishing_Scene("canvas_fishing_room",common_events)
 scenes["canvas_fishing_room"].title_source = document.getElementById("title_fishing_room")
@@ -815,15 +815,15 @@ for i in range(0,10):
 	scenes["canvas_fishing_room"].assign_object(
 		Fish(random.randint(bounds[0],bounds[2]),random.randint(bounds[1],bounds[3]),16,16,document.getElementById("fish_image"), animation_data["fish"])
 	)
-        
+		
 scenes["canvas_fishing_room"].render()
 
 import asyncio
 async def update_tick():
-    delta : float = 0.1
-    while True:
-        await asyncio.sleep(delta)
-        scenes["canvas_fishing_room"].render(delta)
+	delta : float = 0.1
+	while True:
+		await asyncio.sleep(delta)
+		scenes["canvas_fishing_room"].render(delta)
 asyncio.ensure_future(update_tick())
-    
+	
 </py-script>
