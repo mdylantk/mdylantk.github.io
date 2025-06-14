@@ -46,6 +46,9 @@
 import random
 import math
 import os
+import asyncio
+import json
+import js
 from js import document
 from js import window
 from enum import IntEnum
@@ -53,14 +56,14 @@ from pyodide.ffi import create_proxy
 from PIL import Image, ImageFilter
 from datetime import datetime
 
-#FISHING VARS
+###FISHING VARS
 fish_div = document.getElementById('fish')
 local_storage = window.localStorage
 scenes = {}
 animation_data = {}
 fish_data = {}
 	
-#OBJECT
+###OBJECT
 class Canvas_Object:
 	def __init__(self, x:float=0, y:float=0, width:float=1, height:float=1,sprite=None, animation_data = {}, name:str="Object", dialog_data = {}):
 		self.notify_state_change = {}
@@ -174,7 +177,7 @@ class Canvas_Object:
 	def __str__(self):
 		return ("Canvas_Object")
 
-#FISH
+###FISH
 class AI_STATE(IntEnum):
 	IDLE = 0
 	SWIMING = 1
@@ -353,7 +356,7 @@ class Fish(Canvas_Object):
 	def __str__(self):
 		return self.name
 
-#SCENE
+###SCENE
 class Scene:
 	def __init__(self, id, events):
 		self._events = {} #moving events here so thet can be unquie
@@ -433,7 +436,7 @@ class Canvas_Scene(Scene):
 		return state_change
 
 			
-#MAIN SCENE
+###MAIN SCENE
 class Main_Scene(Canvas_Scene):
 	
 	def __init__(self, id, events):
@@ -687,7 +690,10 @@ class Bobber(Canvas_Object):
 				self.height * y_scale
 			)
 
-#FISHING MAIN
+###FISHING MAIN
+
+#base url to use from loading hosted files
+SOURCE_PATH = "https://mdylantk.github.io/Fishing_Widget/"
 
 def handle_events(event):
 	event_owner_id = event.target.id
@@ -695,6 +701,20 @@ def handle_events(event):
 		owner = scenes[event_owner_id]
 		owner.handle_event(event)
 
+#load json from url and convert it to a python dict
+async def fetch_json(url):
+	response = await js.fetch(url)
+	data = await response.json()
+	return dict(data.to_py()) 
+
+#The Main Loop function
+async def update_tick():
+	delta : float = 0.1
+	while True:
+		await asyncio.sleep(delta)
+		scenes["canvas_fishing_room"].render(delta)
+
+#Declare common events
 common_events = {
 	"click":handle_events,
 	"mousedown":handle_events,
@@ -705,115 +725,20 @@ common_events = {
 	"touchmove":handle_events
 }
 
+#Load data from JSON
 if os.path.exists('animation_data.json'):
 	with open('animation_data.json', 'r') as file:
 		animation_data = json.load(file)
 else:
-  animation_data = {
-	"default": {
-		"tile_x":32,
-		"tile_y":32,
-		"idle": {"frames":[[0,0]]},
-		"walk": {"frames":[[1,0],[1,1],[1,2],[1,3]],"frame_delay":0.2},
-		"sit": {"frames":[[2,0]]},
-		"lay": {"frames":[[3,0]]}
-	},
-	"fish": {
-		"tile_x":16,
-		"tile_y":16,
-		"idle": {"frames":[[0,0]]},
-		"swim_left": {"frames":[[0,0],[0,1],[0,2],[0,3]],"frame_delay":1.0},
-		"swim_right": {"frames":[[1,0],[1,1],[1,2],[1,3]],"frame_delay":1.0}
-	}
-}	  
+	animation_data = await fetch_json(SOURCE_PATH + 'data/animation_data.json')
+
 if os.path.exists('fish_data.json'):
 	with open('fish_data.json', 'r') as file:
 		fish_data = json.load(file)
 else:
-  fish_data = {
-	"Carp": {
-		"min_weight":1.0,
-		"max_weight":15.0,
-		"aggressiveness":1.0,
-		"diet":["vegeatbles","bread","nuts","worms","cut_bait"],
-		"saltwater": False,
-		"detection_range":32.0,
-		"freshwater": True
-	},
-	"Catfish": {
-		"min_weight":0.5,
-		"max_weight":100.0,
-		"aggressiveness":1.0,
-		"diet":["live-bait","cut_bait"],
-		"saltwater": False,
-		"detection_range":32.0,
-		"freshwater": True
-	},
-	"Crappie": {
-		"min_weight":0.25,
-		"max_weight":0.75,
-		"aggressiveness":1.0,
-		"diet":["vegeatbles","bread","nuts","worms","cut_bait"],
-		"saltwater": False,
-		"detection_range":32.0,
-		"freshwater": True
-	},
-	"Trout": {
-		"min_weight": 1.0,
-		"max_weight": 8.0,
-		"aggressiveness":1.0,
-		"diet":["insects","small_fish","live_bait"],
-		"saltwater": False,
-		"detection_range":32.0,
-		"freshwater": True
-	},
-	"Largemouth Bass": {
-		"min_weight":0.5,
-		"max_weight":2.0,
-		"aggressiveness":1.0,
-		"diet":["insects","small_fish","live_bait","worms","cut_bait"],
-		"saltwater": False,
-		"detection_range":32.0,
-		"freshwater": True
-	},
-	"Salmon": {
-		"min_weight":3.0,
-		"max_weight":6.0,
-		"aggressiveness":1.0,
-		"diet":["insects","small_fish","live_bait","vegeatbles","bread","nuts","worms","cut_bait"],
-		"saltwater": True,
-		"detection_range":32.0,
-		"freshwater": True
-	},
-	"Smallmouth Bass": {
-		"min_weight":0.4,
-		"max_weight":2.4,
-		"aggressiveness":2.0,
-		"diet":["crayfish"],
-		"saltwater": False,
-		"detection_range":32.0,
-		"freshwater": True
-	},
-	"Sturgeon": {
-		"min_weight":160.0,
-		"max_weight":360.0,
-		"aggressiveness":2.0,
-		"diet":["crayfish","small_fish","worms","clams"],
-		"saltwater": False,
-		"detection_range":32.0,
-		"freshwater": True
-	},
-	"Walleye": {
-		"min_weight":4.0,
-		"max_weight":10.0,
-		"aggressiveness":1.0,
-		"diet":["small_fish","worms"],
-		"saltwater": False,
-		"detection_range":32.0,
-		"freshwater": True
-	}
-}	  
+	fish_data = await fetch_json(SOURCE_PATH + 'data/fish_data.json')
 
+#Set up scenes
 scenes["canvas_fishing_room"] = Fishing_Scene("canvas_fishing_room",common_events)
 scenes["canvas_fishing_room"].title_source = document.getElementById("title_fishing_room")
 scenes["canvas_fishing_room"].dialog_source = document.getElementById("dialog_fishing_room")
@@ -822,19 +747,16 @@ scenes["canvas_fishing_room"].fish_data = fish_data
 
 bounds = scenes["canvas_fishing_room"].bounds
 
+#Spawn Fish
 for i in range(0,10):
 	scenes["canvas_fishing_room"].assign_object(
 		Fish(random.randint(bounds[0],bounds[2]),random.randint(bounds[1],bounds[3]),16,16,document.getElementById("fish_image"), animation_data["fish"])
 	)
-		
+
+#init Render
 scenes["canvas_fishing_room"].render()
 
-import asyncio
-async def update_tick():
-	delta : float = 0.1
-	while True:
-		await asyncio.sleep(delta)
-		scenes["canvas_fishing_room"].render(delta)
+#Start the Main Loop
 asyncio.ensure_future(update_tick())
 	
 </py-script>
