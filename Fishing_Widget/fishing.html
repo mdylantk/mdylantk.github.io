@@ -110,8 +110,8 @@ class Canvas_Object:
 					current_frame = 0
 					if "current_frame" in frames_data:
 						current_frame = frames_data["current_frame"]
-					frame_x = frames_data["frames"][current_frame][1] * frame_width 
-					frame_y = frames_data["frames"][current_frame][0] * frame_height
+					frame_x = frames_data["frames"][current_frame][0] * frame_width 
+					frame_y = frames_data["frames"][current_frame][1] * frame_height
 					if self.animation_speed == 0:
 						self.animation_data[self.animation]["current_frame"] = 0
 					else:
