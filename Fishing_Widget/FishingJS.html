@@ -1,0 +1,354 @@
+
+<div id="fish" style="width:320px;">
+	<div style="display: flex; flex-direction: column;">
+		<div id="header_fishing_room" style="position: relative">
+			<img src="https://mdylantk.github.io/Fishing_Widget/assets/Title_Border.png" alt="title texture" style="z-index: 1;position: absolute;
+				border: 2px solid #000; background-color:cyan">
+			<div id="title_fishing_room" style="z-index:2; position: absolute;font-size:16px;height:20px;margin:4px;margin-left:10px;">
+				
+			</div>
+		</div>
+				<!--  user-select: none; will disable selecting things when clicking too much on the canvas. Note that with will disable selection text in elements
+				so it is best to use it in elements that do not have selectable text-->
+		<div id="body_fishing_room" style="position: relative; user-select: none;">
+			<canvas id="canvas_fishing_room" width="320" height="320" style="background-color:#333; 
+				background-image: url('https://mdylantk.github.io/Fishing_Widget/assets/waterscape_day.png'); background-size: 100% 100%; image-rendering: pixelated; position: relative;top:20px;
+				border-bottom: 2px solid #000;border-left: 2px solid #000;border-right: 2px solid #000;">CatRoom</canvas>
+		</div>
+		<div id ="footer_fishing_room" style="position: relative;">
+			<img src="https://mdylantk.github.io/Fishing_Widget/assets/Title_Border.png" alt="dialog texture" style="z-index: 1;position: absolute;height:64px;width:320px;
+				border: 2px solid #000; background-color:cyan">
+			<div id="dialog_fishing_room" style="z-index:2; position: absolute;font-size:12px;height:64px;color:white;margin:4px;margin-left:6px;margin-right:6px;">
+					 
+			</div>
+		</div>
+	</div>
+</div>
+
+<div id ="counter">
+
+</div>
+
+<div id="assets" hidden>
+	<img id="fish_image" src="https://mdylantk.github.io/Fishing_Widget/assets/fish.png" alt="fish">
+</div>
+
+<script src="./scripts_js/Scene.js"></script>
+
+
+
+<script>
+
+	class Access_Handler {
+		//This allow object to connect to system it used without
+		//having the scene or main decided which it gets
+		#accesses = {}
+		//the setter is most ment to set the accesses once, but not sure if the other functions are too much
+		set accesses(value){
+			if (value && typeof value === 'object'){
+				this.#accesses = value;
+			}
+		}
+		get_access(name){
+			return this.#accesses[name];
+		}
+		//A way to add events. can add verifcation if needed
+		register_access(name,event){
+			this.#accesses[name] = name;
+		}
+		//should not be used, but here to provide a way to handler it just incase
+		remove_access(name){
+			delete this.#accesses[name]
+		}
+		constructor(accesses = {}){
+			this.accesses = accesses;
+		}
+	}
+
+
+	class Fish extends Scene_Object {
+		static AI_STATE = new enumeration("IDLE","SWIM","HOOKED");
+		ai_state = Fish.AI_STATE.IDLE;
+		animation_frame = -1.0;
+		idle_time = 1.0;
+
+		pick_new_destination(){
+			let bounds = this.collsion_map.get_bounds();
+			this.move_to_point = new Point(Math.max(Math.random() * bounds.max.x, bounds.min.x), Math.max(Math.random() * bounds.max.y, bounds.min.y))
+		}
+		move(delta = 1.0){
+			let speed = delta * 1.0;
+			let direction = Point.normalize(Point.direction_to(this.position,this.move_to_point));
+			this.direction = direction; //setting the facing to the move direction
+			let move_direction = Point.multiply(direction,Point.convert(speed));//.multiply(speed)
+			this.position = Point.add(this.position,move_direction);
+		}
+		on_clicked(){
+			console.log("fish is clicked");
+		}
+		render(){
+			let frames_data = this.animation_data[this.animation].frames
+			this.animation_frame += this.animation_speed;
+			
+			if (this.animation_frame > frames_data.length - 1.0 || this.animation_frame < 0){
+				if (this.animation_speed >= 0) {
+					this.animation_frame = 0;
+				}
+				else {
+					this.animation_frame = Math.max(frames_data.length - 1.0, 0);
+				}
+			}
+
+			return {
+				image:this.image_source,
+				x:frames_data[Math.round(this.animation_frame)][0] * this.animation_data["tile_x"],
+				y:frames_data[Math.round(this.animation_frame)][1] * this.animation_data["tile_y"],
+				width: this.animation_data["tile_x"],
+				height: this.animation_data["tile_y"]
+			}
+		};
+		update(delta=1.0){
+			if (this.ai_state === Fish.AI_STATE.IDLE){
+				this.idle_time -= 1.0*delta;
+				if (this.idle_time < 0){
+					console.log(this.collsion_map.get_objects());//a test to see what is returned
+					this.pick_new_destination();
+					this.ai_state = Fish.AI_STATE.SWIM;
+				}
+				return
+			}
+			if (this.ai_state === Fish.AI_STATE.HOOKED){
+				//no hook case yet
+				return
+			}
+			if (this.ai_state === Fish.AI_STATE.SWIM){
+				if (typeof this.move_to_point === "undefined"){
+					this.pick_new_destination();
+				}
+				let distance_to_move = Point.distance_to(this.position,this.move_to_point);
+				if (distance_to_move < 32.0){
+					console.log("meow at ", this.move_to_point);
+					this.ai_state = Fish.AI_STATE.IDLE;
+					this.idle_time = Math.random()*10.0;
+				}
+				else{
+					this.move(delta);
+					if (this.direction.x > 0){
+						this.animation = "swim_right";
+					}
+					else if (this.direction.x < 0){
+						this.animation = "swim_left";
+					}
+				}
+				return
+			}
+		}
+		constructor(options = {}){
+			super(options);
+			this.direction = options['direction'] || new Point();
+			this.animation_data = options['animation_data'] || {};
+			this.animation = options['animation'] || "swim_right";
+			this.animation_speed = options['animation_speed'] || 0.4;
+			//this.collsion_map = options['collsion_map'] || null;
+
+			if (options['access_handler']){
+				let scene = options['access_handler'].get_access('scene')
+				if (scene){
+					this.collsion_map = scene.get_collsion_map();
+				}
+				//this.collsion_map = options['access_handler'].get_access('collsion_map')
+			}
+
+			console.log("ai state: ",this.ai_state, Fish.AI_STATE);
+			console.log(Fish.AI_STATE[0],Fish.AI_STATE[1],Fish.AI_STATE[2]);
+			console.log(options);
+		}
+	}
+
+
+	//this is the impemention of the scene. It here so the scene can be removed of data it dose not need ref to
+	class Test_Scene extends Canvas_Scene {
+		//_counter = new Signal(0);
+		//get counter() {
+		//	return this._counter.value;
+		//}
+		//set counter(value) {
+		//	this._counter.value = value;
+		//	this._counter.emit(this._counter.value)
+		//}
+		handle_event(type,event) {
+			//can call the function directly if exist
+			//might need to check if it a function
+			if (this[type] && typeof this[type] === "function"){
+				this[type](event)
+				//may need to return if handled
+				//since it may check for other cases directly afterwards
+				return
+			}
+		}
+		on_click(event) {
+			//this.viewport.get_width(), this.viewport.get_height()
+			//todo: make sure to add a function to convert the mouse position into scene position
+			//what was it, use the viewport position and then offset it by the local pos if viewport
+			//but may need to be adjusted if position centered. if orgin is top left corner, then perhaps
+			//the sence position is the local pos plus the viewport position
+			if (this.viewport != null){
+				let mouse_position = new Point(event.clientX,event.clientY);
+				if (this.viewport.is_in_viewport(new Point(event.clientX,event.clientY))){
+					console.log("meow click (x,y)",event.clientX,event.clientY);
+					let scene_position = Point.subtract(mouse_position,this.viewport.get_position())
+					//let scene_position = mouse_position.subtract(this.viewport.get_position())
+					console.log("meow scene position: ",scene_position);
+					this.scene_objects.forEach((scene_object) => {
+						//should check if it a function
+						if (scene_object.on_clicked && (
+							//todo: need to check object collsion size
+							//instead of staticly declare it
+							scene_position.x >= scene_object.position.x &&
+							scene_position.y >= scene_object.position.y &&
+							scene_position.x < scene_object.position.x + 16 &&
+							scene_position.y < scene_object.position.y + 16
+						)) {
+							scene_object.on_clicked()
+						}
+					});
+					//on_clicked()
+				}
+			}
+		}
+		assign_collsion_map(collsion_map){
+			super.assign_collsion_map(collsion_map);
+			//overriding the get bounds as a force way to limit navvigation to half the height
+			collsion_map.get_bounds = () =>{
+				const viewport = this.viewport
+				return {
+					type:"square",
+					get min() {
+						return new Point(0.0, viewport.get_height()/2);
+						},
+					get max() {
+						return new Point(viewport.get_width(), viewport.get_height());
+						},
+				}
+			}
+		}
+	}
+
+	async function fetch_json(url) {
+		const response = await fetch(url, {
+			headers: {'Accept': 'application/json'}
+		});
+		return response.json()
+	}
+
+	//this handles the main logic. it n an object due to needing to await content
+	//it could be converted to a class, but this should be good enough
+	var main = {
+		animation_data : {},
+		fish_data : {},
+		current_scene : null,
+		scene_interface : new Scene_Interface(),
+		collsion_map : new CollisionMap(),
+		access_handler : new Access_Handler(),
+		//both the game and scene should have a spawn/create object function
+		//game version is responsible for assigning any nessary globals
+		//and scene for keeping track of it
+		spawn_object(object_class, options = {}) {
+			//can inject data into options as needed, but this means some data cant be override this way(unless skipping this and acessing scene directly)
+			options["collsion_map"] = this.collsion_map;
+			options["access_handler"] = this.access_handler;
+			const new_object = this.current_scene.create_scene_object(object_class,options);
+			//new_object.collsion_map = this.collsion_map;
+			return new_object
+		},
+		register_events(){
+			//This connects the doc and scene events
+			//will ref self. this allow any reg events to be used as long as the current scene is vaild
+			let self = this;
+			document.addEventListener("click", function(){
+				if (self.current_scene){
+					self.current_scene.handle_event("on_click",event);
+				}
+			});
+		},
+		unregister_events(){
+			//This need to do the same as register_events, but instead remove the event
+			//this is importaint if changing scenes. if not handled, might cause memory leak
+			let self = this;
+			if (self.current_scene == null){
+				return
+			}
+			document.removeEventListener("click", function(){
+				if (self.current_scene){
+					self.current_scene.handle_event("on_click",event);
+				}
+			});
+		},
+		switch_scene(scene){
+			this.unregister_events();
+			this.current_scene = scene;
+			//this.current_scene.assign_collsion_map(this.collsion_map);
+			this.register_events();
+			this.scene_interface.scene = scene;
+			//if (scene){
+			//	this.access_handler.register_access("scene",scene.get_scene_events());
+			//}
+			//else {
+				//setting it null instead of removing it. may handle it like collsion
+				//and have the object fix and make the scene reassign the functions
+				//maybe store a ref to scene since it kind of already. maybe private with a setter?
+			//	this.access_handler.register_access("scene",null);
+			//}
+		},
+		async setup () {
+			this.animation_data = await fetch_json('https://mdylantk.github.io/Fishing_Widget/data/animation_data.json');
+			this.fish_data = await fetch_json('https://mdylantk.github.io/Fishing_Widget/data/fish_data.json');
+			console.log(this.animation_data);
+			console.log(this.fish_data);
+			this.access_handler.accesses = {
+				'scene': this.scene_interface,
+				'collsion_map': this.collsion_map
+			};
+			//this.access_handler.register_access('scene', this.scene_interface);
+			//this.access_handler.register_access('collsion_map', this.collsion_map);
+
+			this.switch_scene(new Test_Scene({
+				'canvas':document.getElementById("canvas_fishing_room"),
+				'collsion_map':this.collsion_map
+				}));
+			//console.log("MEWMEW: ", this.scene_interface, this.access_handler)
+			//this.current_scene = new Scene(document.getElementById("canvas_fishing_room"));
+			//this.current_scene.assign_collsion_map(this.collsion_map);
+			
+			//this is a counter test. mostly to check if subsribe and unscribe works
+			//this.current_scene._counter.subscribe("test",(...args) => console.log("meow",...args) );
+			//this.current_scene._counter.subscribe(this.current_scene,(...args) => console.log("mew",...args) );
+			
+
+
+			this.spawn_object(Fish, {
+				position: new Point(64,170),
+				image_source: document.getElementById("fish_image"),
+				animation_data: this.animation_data.fish
+			});
+
+			//console.log(test_object.animation_data);
+
+			//this.collsion_map.is_in_bounds(test_object);
+			let test_bounds = this.collsion_map.get_bounds()
+			console.log(test_bounds, test_bounds.min, test_bounds.max);
+			
+			//this.register_events();
+			//Watcher = new WeakRef(test_object);
+			this.main_loop_id = setInterval(() => {
+				this.current_scene.update();
+				this.current_scene.render();
+			}, 100);
+		},
+	};
+
+	main.setup();
+	
+
+</script>
+
