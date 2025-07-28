@@ -1,4 +1,3 @@
-# .gitignore_template is a .gitignore to used. Keeping this for ref.
 # Ignore the contents of the _site directory and other cache directories
 _site/
 .sass-cache/
