@@ -85,6 +85,8 @@
 		}
 		on_clicked(){
 			console.log("fish is clicked");
+			console.log(this, this.id, this.constructor);
+			this.scene_ref.destroy_object(this.id, this.constructor);
 		}
 		render(){
 			let frames_data = this.animation_data[this.animation].frames
@@ -153,6 +155,7 @@
 
 			if (options['access_handler']){
 				let scene = options['access_handler'].get_access('scene')
+				this.scene_ref = scene;//this is for testing
 				if (scene){
 					this.collsion_map = scene.get_collsion_map();
 				}
@@ -199,19 +202,33 @@
 					let scene_position = Point.subtract(mouse_position,this.viewport.get_position())
 					//let scene_position = mouse_position.subtract(this.viewport.get_position())
 					console.log("meow scene position: ",scene_position);
-					this.scene_objects.forEach((scene_object) => {
-						//should check if it a function
-						if (scene_object.on_clicked && (
+					this.scene_objects.forEach((class_container) => {
+						class_container.forEach((scene_object) => {
+							if (scene_object.on_clicked && (
 							//todo: need to check object collsion size
 							//instead of staticly declare it
-							scene_position.x >= scene_object.position.x &&
-							scene_position.y >= scene_object.position.y &&
-							scene_position.x < scene_object.position.x + 16 &&
-							scene_position.y < scene_object.position.y + 16
-						)) {
-							scene_object.on_clicked()
-						}
+								scene_position.x >= scene_object.position.x &&
+								scene_position.y >= scene_object.position.y &&
+								scene_position.x < scene_object.position.x + 16 &&
+								scene_position.y < scene_object.position.y + 16
+							)) {
+								scene_object.on_clicked();
+							}
+						});
 					});
+					//this.scene_objects.forEach((scene_object) => {
+						//should check if it a function
+					//	if (scene_object.on_clicked && (
+							//todo: need to check object collsion size
+							//instead of staticly declare it
+					//		scene_position.x >= scene_object.position.x &&
+					//		scene_position.y >= scene_object.position.y &&
+					//		scene_position.x < scene_object.position.x + 16 &&
+					//		scene_position.y < scene_object.position.y + 16
+					//	)) {
+					//		scene_object.on_clicked()
+					//	}
+					//});
 					//on_clicked()
 				}
 			}
@@ -323,6 +340,7 @@
 			//this is a counter test. mostly to check if subsribe and unscribe works
 			//this.current_scene._counter.subscribe("test",(...args) => console.log("meow",...args) );
 			//this.current_scene._counter.subscribe(this.current_scene,(...args) => console.log("mew",...args) );
+			//console.log(this.current_scene.constructor.name, this.current_scene.constructor == Test_Scene ); //a way to get the class ref
 			
 
 

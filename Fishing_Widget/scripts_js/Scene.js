@@ -373,36 +373,41 @@ class Scene_Object {
 }
 
 class Scene_Interface {
+    //scene may be assign so this can be used to indirectly
+    //acess it. Use case is if this represents the current main scene
+    //where the current main scene may change. instead of overriding all the methoods
+    //or creating a new object and making sure all ref to the old get updated to the new,
+    //the scene ref could be replace instead.
     #scene = null;
     set scene(value){
         this.#scene = value;
     }
-    create_object(scene_class, options = {}) {
-        if (this.#scene){
-            return this.#scene.create_scene_object(scene_class, options);
+    create_object(scene_class, options = {}, scene = this.#scene) {
+        if (scene instanceof Scene){
+            return scene.create_scene_object(scene_class, options);
         }
         return null;
     }
-    remove_object(object_id) {
-        if (this.#scene){
-            return this.#scene.remove_object(object_id,false);
+    remove_object(object_id, object_class=null, scene = this.#scene) {
+        if (scene instanceof Scene){
+            return scene.remove_object(object_id,object_class,false);
         }
         return null;
     }
-    destroy_object(object_id) {
-        this.#scene.remove_object(object_id,true);
+    destroy_object(object_id, object_class=null, scene = this.#scene) {
+        if (scene instanceof Scene){
+            scene.remove_object(object_id,object_class,true);
+        }
     }
-
-    get_collsion_map(){
-        if (this.#scene){
-            return this.#scene.collsion_map;
+    get_collsion_map(scene = this.#scene){
+        if (scene instanceof Scene){
+            return scene.collsion_map;
         }
         return null;
     }
-
-    get_viewport(){
-        if (this.#scene){
-            return this.#scene.viewport;
+    get_viewport(scene = this.#scene){
+        if (scene instanceof Scene){
+            return scene.viewport;
         }
         return null;
     }
@@ -413,28 +418,113 @@ class Scene {
     _object_count = 0;
     scene_objects = new Map();
 
-    remove_object(object_id, destroy = false) {
-        let scene_object = this.scene_objects.get(object_id);
-        console.log("removing ", object_id, " : ", scene_object, Number.isFinite(object_id),this.scene_objects)
+    //This will run the callable on each scene object
+    //any function that allow filtering should try to find the class name
+    //and check by class
+    for_each_scene_object(callable = function(object){}){
+        this.scene_objects.forEach((class_container) => {
+            class_container.forEach((object) => {
+                callable(object)
+            });
+        })
+    }
+    for_each_scene_object_by_class(class_name, callable = function(object){}, check_inheritance = true){
+        if (this.scene_objects.has(class_name) && !check_inheritance){
+            let class_container = this.scene_objects.get(class_name);
+            class_container.forEach((object) => {
+                callable(object)
+            });
+            //return since the flag say to not check inheritance
+            return
+        }
+        this.scene_objects.forEach((class_container,key) => {
+            if (key.prototype instanceof class_name || key == class_name){ //check if it extend the class, else ignore
+                class_container.forEach((object) => {
+                    callable(object)
+                });
+            }
+            else{
+                console.log(key, " is not related to ", class_name)
+            }
+        })
+    }
+    get_scene_object(id = 0, class_name = null){
+        let class_container = this.scene_objects.get(class_name);
+        if (class_container){
+            return class_container[id];
+        }
+        return this.scene_objects.get(id);
+    }
+    remove_object(object_id, class_name = null, destroy = false) {
+        //let scene_object = this.scene_objects.get(object_id);
+        let scene_object = this.get_scene_object(object_id, class_name);
+        console.log("removing ", class_name, object_id, " : ", scene_object,this.scene_objects)
         if (scene_object) {
             scene_object.on_exit_scene();
             if (destroy){
                 scene_object.on_destroy();
-                this.scene_objects.delete(object_id);
+                //this.scene_objects.delete(object_id);
+            }
+            //we will assume class container exists since scene object is vaild
+            let class_container = this.scene_objects.get(class_name);
+            console.log("mew?", class_container.length-1, class_container.length == object_id, object_id);
+            if (class_container.length-1 == object_id){
+                console.log("deleting object",class_container[class_container.length - 1]);
+                class_container.pop();
+                //should make sure all null values are removed
+                while (class_container.length && !class_container[class_container.length - 1]) {
+                    console.log("Poping object",class_container[class_container.length - 1]);
+                    class_container.pop();
+                }
+            }
+            else{
+                console.log("nulling object",class_container[object_id]);
+                class_container[object_id] = null;
             }
         }
         return scene_object;
     }
-    
+    create_scene_object(scene_class, options = {}){
+        //TODO: make sure id assignment is correct
+        let class_container;
+        let id;
+        let scene_object;
+        if (!scene_class.prototype instanceof Scene_Object){
+            console.log("scene_class dose not extend Scene_Object");
+        }
+        if (!this.scene_objects.has(scene_class)){
+            this.scene_objects.set(scene_class,[]);  
+        }
+        class_container = this.scene_objects.get(scene_class);
+        console.log(class_container)
+        id = class_container.length;
+        for (let i = 0; i < class_container.length; i++) {
+            if (class_container[i]){
+                continue;
+            }
+            id = i;
+            break;
+        } 
+        //let id = this._object_count;
+        let events = options["events"] || {}
+        events.scene = this.scene_events;
+        options["events"] = events;
+        options["id"] = id;
+        scene_object = new scene_class(options);
+        class_container[id] = scene_object;
+        //this.scene_objects.set(id, scene_object);
+        this._object_count += 1;
+        scene_object.on_enter_scene();
+        return scene_object;
+    }
     clear() {
         this._on_clearing.emit()
         this.scene_objects.forEach(function(scene_object, object_id){
-            remove_object(object_id, destroy = true);
+            remove_object(object_id, scene_object.constructor, destroy = true);
         });
 
         this.scene_objects.clear();
     }
-
     assign_collsion_map(collsion_map){
         this.collsion_map = collsion_map;
         collsion_map.is_in_bounds = (value) => {
@@ -467,11 +557,13 @@ class Scene {
         collsion_map.get_objects = (options={"filter" : function(object){return true} }) => {
             if (typeof options.filter === "function"){
                 let objects = [];
-                for (const object of this.scene_objects.values()){
+                let class_name = options["class_name"] || Scene_Object;
+
+                this.for_each_scene_object_by_class(class_name,(object)=>{
                     if (options.filter(object)){
                         objects.push(object);
                     }
-                }
+                })
                 return objects;
             }
             return Array.from(this.scene_objects.values());
@@ -483,21 +575,22 @@ class Scene {
     }
 
     update(delta = 1.0){
-        this.scene_objects.forEach((scene_object) => {
-            scene_object.update(delta);
+        //could make a map and only add objects that have update enabled.
+        //could use a string of class + id to identify them. for now this will
+        //update all objects
+        this.for_each_scene_object((scene_object) => {
+            if (scene_object){
+                scene_object.update(delta);
+            }
         });
-    }
-    create_scene_object(scene_class, options = {}){
-        let id = this._object_count;
-        let events = options["events"] || {}
-        events.scene = this.scene_events;
-        options["events"] = events;
-        options["id"] = id;
-        let scene_object = new scene_class(options);
-        this.scene_objects.set(id, scene_object);
-        this._object_count += 1;
-        scene_object.on_enter_scene();
-        return scene_object;
+        //this.scene_objects.forEach((class_container) => {
+        //    class_container.forEach((scene_object) => {
+        //        scene_object.update(delta);
+        //    });
+        //});
+        //this.scene_objects.forEach((scene_object) => {
+        //    scene_object.update(delta);
+        //});
     }
     handle_event(type,event) {
         //event logic gose here
@@ -516,7 +609,10 @@ class Canvas_Scene extends Scene{
     can_render_scene_object(scene_object){
         //Note: could copy the point, but should try to keep most these
         //function pure unless they are setting/updating the position or something
-        return this.viewport.is_in_viewport(scene_object.position)
+        if(scene_object){
+            return this.viewport.is_in_viewport(scene_object.position)
+        }
+        return false;
     }
     render_scene_object(scene_object,canvas_context){
         let render_image = scene_object.render();
@@ -556,13 +652,26 @@ class Canvas_Scene extends Scene{
         else {
             console.log("viewport canvas_source is null");
         }
-
-        this.scene_objects.forEach((scene_object) => {
-            if (this.can_render_scene_object(scene_object,canvas_context)){
-                this.render_scene_object(scene_object,canvas_context);
+        this.for_each_scene_object((scene_object) => {
+            if (scene_object){
+                if (this.can_render_scene_object(scene_object,canvas_context)){
+                    this.render_scene_object(scene_object,canvas_context);
+                }
+                else {
+                    console.log("object is not in view")
+                }
             }
-            else {console.log("object is not in view")}
+            else{
+                console.log("null ref, either there holes in the array(fine) or the array is not resizing(not fine)")
+            }
         });
+
+        //this.scene_objects.forEach((scene_object) => {
+        //    if (this.can_render_scene_object(scene_object,canvas_context)){
+        //        this.render_scene_object(scene_object,canvas_context);
+        //    }
+        //    else {console.log("object is not in view")}
+        //});
     }
     constructor(options = {}){
         super(options)
