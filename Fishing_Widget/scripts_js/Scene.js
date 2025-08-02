@@ -458,7 +458,7 @@ class Scene {
     remove_object(object_id, class_name = null, destroy = false) {
         //let scene_object = this.scene_objects.get(object_id);
         let scene_object = this.get_scene_object(object_id, class_name);
-        console.log("removing ", class_name, object_id, " : ", scene_object,this.scene_objects)
+        console.log("removing ", class_name, object_id, " : ", scene_object,this.scene_objects);
         if (scene_object) {
             scene_object.on_exit_scene();
             if (destroy){
@@ -583,14 +583,6 @@ class Scene {
                 scene_object.update(delta);
             }
         });
-        //this.scene_objects.forEach((class_container) => {
-        //    class_container.forEach((scene_object) => {
-        //        scene_object.update(delta);
-        //    });
-        //});
-        //this.scene_objects.forEach((scene_object) => {
-        //    scene_object.update(delta);
-        //});
     }
     handle_event(type,event) {
         //event logic gose here
@@ -665,13 +657,6 @@ class Canvas_Scene extends Scene{
                 console.log("null ref, either there holes in the array(fine) or the array is not resizing(not fine)")
             }
         });
-
-        //this.scene_objects.forEach((scene_object) => {
-        //    if (this.can_render_scene_object(scene_object,canvas_context)){
-        //        this.render_scene_object(scene_object,canvas_context);
-        //    }
-        //    else {console.log("object is not in view")}
-        //});
     }
     constructor(options = {}){
         super(options)

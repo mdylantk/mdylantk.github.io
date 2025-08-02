@@ -113,7 +113,7 @@
 			if (this.ai_state === Fish.AI_STATE.IDLE){
 				this.idle_time -= 1.0*delta;
 				if (this.idle_time < 0){
-					console.log(this.collsion_map.get_objects());//a test to see what is returned
+					//console.log(this.collsion_map.get_objects());//a test to see what is returned
 					this.pick_new_destination();
 					this.ai_state = Fish.AI_STATE.SWIM;
 				}
@@ -129,7 +129,7 @@
 				}
 				let distance_to_move = Point.distance_to(this.position,this.move_to_point);
 				if (distance_to_move < 32.0){
-					console.log("meow at ", this.move_to_point);
+					//console.log("meow at ", this.move_to_point);
 					this.ai_state = Fish.AI_STATE.IDLE;
 					this.idle_time = Math.random()*10.0;
 				}
@@ -202,11 +202,11 @@
 					let scene_position = Point.subtract(mouse_position,this.viewport.get_position())
 					//let scene_position = mouse_position.subtract(this.viewport.get_position())
 					console.log("meow scene position: ",scene_position);
-					this.scene_objects.forEach((class_container) => {
-						class_container.forEach((scene_object) => {
-							if (scene_object.on_clicked && (
-							//todo: need to check object collsion size
-							//instead of staticly declare it
+					this.for_each_scene_object((scene_object)=>{
+						if (scene_object){
+                			if (scene_object.on_clicked && (
+								//todo: need to check object collsion size
+								//instead of staticly declare it
 								scene_position.x >= scene_object.position.x &&
 								scene_position.y >= scene_object.position.y &&
 								scene_position.x < scene_object.position.x + 16 &&
@@ -214,22 +214,8 @@
 							)) {
 								scene_object.on_clicked();
 							}
-						});
-					});
-					//this.scene_objects.forEach((scene_object) => {
-						//should check if it a function
-					//	if (scene_object.on_clicked && (
-							//todo: need to check object collsion size
-							//instead of staticly declare it
-					//		scene_position.x >= scene_object.position.x &&
-					//		scene_position.y >= scene_object.position.y &&
-					//		scene_position.x < scene_object.position.x + 16 &&
-					//		scene_position.y < scene_object.position.y + 16
-					//	)) {
-					//		scene_object.on_clicked()
-					//	}
-					//});
-					//on_clicked()
+						}
+                	});
 				}
 			}
 		}
@@ -304,18 +290,9 @@
 		switch_scene(scene){
 			this.unregister_events();
 			this.current_scene = scene;
-			//this.current_scene.assign_collsion_map(this.collsion_map);
+			this.current_scene.assign_collsion_map(this.collsion_map); //this may be removed later when scene take full responsibility of it
 			this.register_events();
 			this.scene_interface.scene = scene;
-			//if (scene){
-			//	this.access_handler.register_access("scene",scene.get_scene_events());
-			//}
-			//else {
-				//setting it null instead of removing it. may handle it like collsion
-				//and have the object fix and make the scene reassign the functions
-				//maybe store a ref to scene since it kind of already. maybe private with a setter?
-			//	this.access_handler.register_access("scene",null);
-			//}
 		},
 		async setup () {
 			this.animation_data = await fetch_json('https://mdylantk.github.io/Fishing_Widget/data/animation_data.json');
@@ -342,13 +319,16 @@
 			//this.current_scene._counter.subscribe(this.current_scene,(...args) => console.log("mew",...args) );
 			//console.log(this.current_scene.constructor.name, this.current_scene.constructor == Test_Scene ); //a way to get the class ref
 			
+			let bounds = this.current_scene.collsion_map.get_bounds();
+			for (let i = 0; i < 16; i++) {
+				let random_point = new Point(Math.max(Math.random() * bounds.max.x, bounds.min.x), Math.max(Math.random() * bounds.max.y, bounds.min.y))
 
-
-			this.spawn_object(Fish, {
-				position: new Point(64,170),
-				image_source: document.getElementById("fish_image"),
-				animation_data: this.animation_data.fish
-			});
+				this.spawn_object(Fish, {
+					position: random_point,
+					image_source: document.getElementById("fish_image"),
+					animation_data: this.animation_data.fish
+				});
+			}
 
 			//console.log(test_object.animation_data);
 
