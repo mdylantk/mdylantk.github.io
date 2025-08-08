@@ -1,3 +1,12 @@
+//About Scene (TODO: maybe rename it and handle as a proper module)
+//  This provides classes to handle at least basic 2d worlds(scenes)
+//  Providing ways to handle the scene objects lifetime
+//  as well as providing bases to override.
+//  This may be design to be used as a modual, but the main goal is
+//  To provide an example to use or build upon to make simple (or more advance)
+//  webbased js games.
+
+
 //for const representation if a number. number return the id of the number and the id returns the number
 //members should be an array of a type that can be identify as symbols
 //TODO allow handling of objects that values are numbers and keys are symbol vaild
@@ -21,6 +30,9 @@ class enumeration {
     }
 }
 
+//A math vector (aka a point in space) that can handle multiable dimensions. 
+//Default point will handle x,y,z, but will act more like a point2d if a z is not set
+//TODO see if extending can override static varibles and if not, handle default_axes differently
 class Point{
     static default_axes = 2;
     get x(){
@@ -190,9 +202,7 @@ class Point{
     }
 }
 
-//This declare a event that will notify all subcribers by calling the callback they assign.
-//used for notifing state changes without checking the state every update
-//TODO: decide if the functions need to be lock (if possible) to prevent overriding them
+//Allows a way to notify change between objects
 class Signal {
     subscribers = new Map();
     emit(...args){
@@ -209,7 +219,8 @@ class Signal {
     }
 }
 
-    class CollisionMap{
+//Handles fetching info about existing collsion of a scene or space
+class CollisionMap{
     is_in_bounds(value){
         return true
     }
@@ -233,7 +244,7 @@ class Signal {
     }
 }
 
-//generic viewport object
+//generic viewport object for declaring what is visable
 class Viewport {   
     get_height(){
         return 0.0
@@ -294,7 +305,10 @@ class Canvas_Viewport extends Viewport {
     }
 }
 
-
+//TODO: try to have some events and signals for comunicating to the scene
+//so basic feature won't nessary need to be acessed by other means (such as the scene interface)
+//The idea is to have a call that trigger (say destroy), the scene will respond and then call the 
+//proper flow (emit the public destroy_signal and then clean up the object)
 class Scene_Object {
     //NOTE: signals first binding is the owner of the signal
     //this allow an object that listens to multiobjects know who trigger it
@@ -303,6 +317,8 @@ class Scene_Object {
     enter_scene_signal = new Signal(); //should emit when added to a scene
     exit_scene_signal = new Signal(); //should emit when being remove from scene
     destroy_signal = new Signal(); //called if object is expected to be GC 
+
+    notify_scene = new Signal(); //reserve for notifing the owning scene of major changes
 
     #visibility = true;
     #collision = true;
@@ -346,6 +362,10 @@ class Scene_Object {
     on_destroy(){
         this.destroy_signal.emit(this);
         this.clear_signals();
+    }
+
+    destroy(){
+        notify_scene(this,"destroy");
     }
 
     render(){
@@ -511,6 +531,12 @@ class Scene {
         options["events"] = events;
         options["id"] = id;
         scene_object = new scene_class(options);
+        scene_object.notify_scene.subscribe(function(object,notification){
+            if (notification == "destroy"){
+                //TODO: finish and make sure it works
+                //this.remove_object(object.id,)
+            }
+        });
         class_container[id] = scene_object;
         //this.scene_objects.set(id, scene_object);
         this._object_count += 1;
