@@ -86,7 +86,8 @@
 		on_clicked(){
 			console.log("fish is clicked");
 			console.log(this, this.id, this.constructor);
-			this.scene_ref.destroy_object(this.id, this.constructor);
+			this.destroy();
+			//this.scene_ref.destroy_object(this.id, this.constructor);
 		}
 		render(){
 			let frames_data = this.animation_data[this.animation].frames

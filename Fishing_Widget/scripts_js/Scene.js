@@ -318,7 +318,7 @@ class Scene_Object {
     exit_scene_signal = new Signal(); //should emit when being remove from scene
     destroy_signal = new Signal(); //called if object is expected to be GC 
 
-    notify_scene = new Signal(); //reserve for notifing the owning scene of major changes
+    notify_signal = new Signal(); //reserve for notifing the owning scene of major changes
 
     #visibility = true;
     #collision = true;
@@ -351,6 +351,7 @@ class Scene_Object {
         this.enter_scene_signal.clear();
         this.exit_scene_signal.clear();
         this.destroy_signal.clear();
+        this.notify_signal.clear();
     }
 
     on_enter_scene(){
@@ -365,7 +366,7 @@ class Scene_Object {
     }
 
     destroy(){
-        notify_scene(this,"destroy");
+        this.notify_signal.emit(this,"destroy");
     }
 
     render(){
@@ -438,13 +439,16 @@ class Scene {
     _object_count = 0;
     scene_objects = new Map();
 
+    //NOTE: The for_each now ignore null cases TODO: remove null cases from callables since it not needed for the for_each
     //This will run the callable on each scene object
     //any function that allow filtering should try to find the class name
     //and check by class
     for_each_scene_object(callable = function(object){}){
         this.scene_objects.forEach((class_container) => {
             class_container.forEach((object) => {
-                callable(object)
+                if (object) {
+                    callable(object);
+                }
             });
         })
     }
@@ -452,7 +456,9 @@ class Scene {
         if (this.scene_objects.has(class_name) && !check_inheritance){
             let class_container = this.scene_objects.get(class_name);
             class_container.forEach((object) => {
-                callable(object)
+                if (object) {
+                    callable(object);
+                }
             });
             //return since the flag say to not check inheritance
             return
@@ -460,7 +466,9 @@ class Scene {
         this.scene_objects.forEach((class_container,key) => {
             if (key.prototype instanceof class_name || key == class_name){ //check if it extend the class, else ignore
                 class_container.forEach((object) => {
-                    callable(object)
+                    if (object) {
+                        callable(object);
+                    }
                 });
             }
             else{
@@ -509,6 +517,7 @@ class Scene {
         let class_container;
         let id;
         let scene_object;
+        let owning_scene = this;
         if (!scene_class.prototype instanceof Scene_Object){
             console.log("scene_class dose not extend Scene_Object");
         }
@@ -526,15 +535,14 @@ class Scene {
             break;
         } 
         //let id = this._object_count;
-        let events = options["events"] || {}
-        events.scene = this.scene_events;
-        options["events"] = events;
+        //let events = options["events"] || {}
+        //events.scene = this.scene_events;
+        //options["events"] = events;
         options["id"] = id;
         scene_object = new scene_class(options);
-        scene_object.notify_scene.subscribe(function(object,notification){
+        scene_object.notify_signal.subscribe("owning_scene",function(object,notification){
             if (notification == "destroy"){
-                //TODO: finish and make sure it works
-                //this.remove_object(object.id,)
+                owning_scene.remove_object(object.id,object.constructor,true);
             }
         });
         class_container[id] = scene_object;
