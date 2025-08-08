@@ -7,21 +7,28 @@
 //  webbased js games.
 
 
-//for const representation if a number. number return the id of the number and the id returns the number
-//members should be an array of a type that can be identify as symbols
-//TODO allow handling of objects that values are numbers and keys are symbol vaild
-//NOTE: bitflags could handle the index as value, but this value need to be parced to be used as a bitflag
-class enumeration {
+/**
+ *  @description A class to declare an object that represent an enum like type.
+ *  @class
+ */
+class Enumeration {
+    #members = [];
+    /**
+     * @description create an enumeration object
+     * @param {...String} arguments The id of each index of the enum
+     *  It will populate the object with varibles name after the id with its value as
+     *  the insertion index starting with an index of 0.
+     *  Note: The id of the enum can be gain by passing the index instead of the id.
+     */
     constructor() {
-        //decided to use the arguments as the members to simplify this
-        this.members = Array.from(arguments);
-        for (let i = 0; i < this.members.length; i++) {
-            this[this.members[i]] = i;
+        this.#members = Array.from(arguments);
+        for (let i = 0; i < this.#members.length; i++) {
+            this[this.#members[i]] = i;
         }
         return Object.freeze(new Proxy(this, {
             get(target, prop, receiver) {
                 if (!isNaN(prop)) {
-                    return target.members[prop];
+                    return target.#members[prop];
                 
                 }
                 return Reflect.get(target, prop, receiver);
@@ -30,9 +37,12 @@ class enumeration {
     }
 }
 
-//A math vector (aka a point in space) that can handle multiable dimensions. 
-//Default point will handle x,y,z, but will act more like a point2d if a z is not set
-//TODO see if extending can override static varibles and if not, handle default_axes differently
+/** 
+ *   @description A math vector (aka a point in space) that can handle multiable dimensions. 
+ *   Default point will handle x,y,z, but will act more like a point2d if a z is not set
+ *   @class
+*/
+//TODO: see if extending can override static varibles and if not, handle default_axes differently
 class Point{
     static default_axes = 2;
     get x(){
@@ -56,16 +66,28 @@ class Point{
         if (value === this.axes[2] || isNaN(value)) {return}
         this.axes[2] = value;
     }
-    //convert the past value to a point.
-    //if it is a point, then the flag will determ if it will return 
-    //a copy of it or not. it used for the copy function
-    //Note: this will return a default point if value is invaild
+    /**
+     * @description Will make a new point from the provided point.
+     * @param {Point} value - The point to copy.
+     * @returns {Point} 
+    */
+    static copy(point){
+        let new_point = new Point();
+        new_point.axes = point.axes.slice()
+        return new_point;
+    }
+    /**
+     * @description convert the value into a point.
+     * used to populate a point if a number is pass up to the max_axes.
+     * @param {Point|number} value - The value to convert.
+     * @param {boolean} return_as_copy - if value is a point, then this would return a new point if true.
+     * @param {number} max_axes - if value is a number, then this will limit the amount of axes to populate.
+     * @returns {Point} 
+    */
     static convert(value, return_as_copy = false, max_axes = this.default_axes){
         if (value instanceof Point){
             if (return_as_copy){
-                let point = new Point();
-                point.axes = value.axes.slice()
-                return point;
+                return Point.copy(value);
             }
             return value;
         }
@@ -73,15 +95,8 @@ class Point{
             let point = new Point();
             point.axes = new Array(max_axes).fill(value)
             return point;
-            //return new Point(value, value, value);
         }
         return new Point()
-    }
-    //This will return a new point from the pass value
-    //but if it a number, it will make a point with all the
-    //axis that value
-    static copy(value){
-        return this.convert(value, true);
     }
     static add(point_a, point_b){
         let new_point = new Point();
@@ -136,9 +151,7 @@ class Point{
         return Math.sqrt(total)
     }
     static normalize(point){
-        let normalize_point = Point.copy(point);
-        return Point.divide(normalize_point,Point.convert(Point.magnitude(point)))
-        //return normalize_point.divide(this.magnitude())
+        return Point.divide(point,Point.convert(Point.magnitude(point)));
     }
     static direction_to(point_a, point_b){
         return Point.subtract(point_b,point_a);
@@ -196,13 +209,21 @@ class Point{
             }
         }
     }
+    /**
+     * @description create a point object
+     * @param {...float} axes sets the x,y,z of the point in that order.
+     * Only the first two are used by default, but additional axes can be added
+     * but only up to z have dedicated getters before needing to acess the axes array directly.
+     */
     constructor(x=0.0, y=0.0){
         this.axes = [];
         this.set(...arguments);
     }
 }
-
-//Allows a way to notify change between objects
+/** 
+ *   @description Allows a way to notify change to subscribed objects
+ *   @class
+*/
 class Signal {
     subscribers = new Map();
     emit(...args){
@@ -219,7 +240,10 @@ class Signal {
     }
 }
 
-//Handles fetching info about existing collsion of a scene or space
+/** 
+ *   @description Handles fetching info about existing collsion of a scene or space
+ *   @class
+*/
 class CollisionMap{
     is_in_bounds(value){
         return true
@@ -244,7 +268,10 @@ class CollisionMap{
     }
 }
 
-//generic viewport object for declaring what is visable
+/** 
+ *   @description A generic viewport for declaring what is visable in a space
+ *   @class
+*/
 class Viewport {   
     get_height(){
         return 0.0
@@ -276,6 +303,10 @@ class Viewport {
     }
 }
 
+/** 
+ *   @description A viewport for declaring what is visable in a JS canvas
+ *   @class
+*/
 class Canvas_Viewport extends Viewport {
     get_height(){
         if (this.canvas){
@@ -305,10 +336,10 @@ class Canvas_Viewport extends Viewport {
     }
 }
 
-//TODO: try to have some events and signals for comunicating to the scene
-//so basic feature won't nessary need to be acessed by other means (such as the scene interface)
-//The idea is to have a call that trigger (say destroy), the scene will respond and then call the 
-//proper flow (emit the public destroy_signal and then clean up the object)
+/** 
+ *   @description Base object a scene will keep track of.
+ *   @class
+*/
 class Scene_Object {
     //NOTE: signals first binding is the owner of the signal
     //this allow an object that listens to multiobjects know who trigger it
@@ -393,12 +424,12 @@ class Scene_Object {
     }
 }
 
+/** 
+ *   @description Handles interacting with a scene for indirect access
+ *  NOTE: Still deciding if this should be in this name space or move to the implementation.
+ *   @class
+*/
 class Scene_Interface {
-    //scene may be assign so this can be used to indirectly
-    //acess it. Use case is if this represents the current main scene
-    //where the current main scene may change. instead of overriding all the methoods
-    //or creating a new object and making sure all ref to the old get updated to the new,
-    //the scene ref could be replace instead.
     #scene = null;
     set scene(value){
         this.#scene = value;
@@ -433,7 +464,10 @@ class Scene_Interface {
         return null;
     }
 }
-
+/** 
+ *   @description Handles a virtual space
+ *   @class
+*/
 class Scene {
     _on_clearing = new Signal();
     _object_count = 0;
@@ -629,7 +663,10 @@ class Scene {
     }
 }
 
-//scene that depends on the canvas
+/** 
+ *   @description Handles a virtual space base on a JS Canvas
+ *   @class
+*/
 class Canvas_Scene extends Scene{
 
     can_render_scene_object(scene_object){
