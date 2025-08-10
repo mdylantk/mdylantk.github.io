@@ -87,6 +87,7 @@
 			console.log("fish is clicked");
 			console.log(this, this.id, this.constructor);
 			this.destroy();
+			return true;
 			//this.scene_ref.destroy_object(this.id, this.constructor);
 		}
 		render(){
@@ -103,6 +104,7 @@
 			}
 
 			return {
+				type:"image",
 				image:this.image_source,
 				x:frames_data[Math.round(this.animation_frame)][0] * this.animation_data["tile_x"],
 				y:frames_data[Math.round(this.animation_frame)][1] * this.animation_data["tile_y"],
@@ -111,6 +113,7 @@
 			}
 		};
 		update(delta=1.0){
+			super.update(delta);
 			if (this.ai_state === Fish.AI_STATE.IDLE){
 				this.idle_time -= 1.0*delta;
 				if (this.idle_time < 0){
@@ -169,6 +172,16 @@
 		}
 	}
 
+	class Bobber extends Scene_Object {
+		render(){
+			return {
+				type:"rect",
+				color:'#8d0101ff',
+				width: 8,
+				height: 8
+			}
+		};
+	}
 
 	//this is the impemention of the scene. It here so the scene can be removed of data it dose not need ref to
 	class Test_Scene extends Canvas_Scene {
@@ -198,12 +211,14 @@
 			//the sence position is the local pos plus the viewport position
 			if (this.viewport != null){
 				let mouse_position = new Point(event.clientX,event.clientY);
+				let handled = false;
 				if (this.viewport.is_in_viewport(new Point(event.clientX,event.clientY))){
 					console.log("meow click (x,y)",event.clientX,event.clientY);
 					let scene_position = Point.subtract(mouse_position,this.viewport.get_position())
 					//let scene_position = mouse_position.subtract(this.viewport.get_position())
 					console.log("meow scene position: ",scene_position);
 					this.for_each_scene_object((scene_object)=>{
+						if (handled) {return;}
 						if (scene_object){
                 			if (scene_object.on_clicked && (
 								//todo: need to check object collsion size
@@ -213,10 +228,14 @@
 								scene_position.x < scene_object.position.x + 16 &&
 								scene_position.y < scene_object.position.y + 16
 							)) {
-								scene_object.on_clicked();
+								handled = scene_object.on_clicked();
 							}
 						}
                 	});
+					if (handled) {return;}
+					//toggle the bobber visibility if nothing else happens. for testing, will behave diffrent when catch fish logic is added
+					this.bobber.position = Point.copy(scene_position);
+					this.bobber.visibility = !this.bobber.visibility;
 				}
 			}
 		}
@@ -330,7 +349,12 @@
 					animation_data: this.animation_data.fish
 				});
 			}
-
+			//todo: try to give the scene the ref of the acess handler and such so it
+			//can give it to its objects.
+			this.current_scene.bobber = this.spawn_object(Bobber, {
+				position: new Point(bounds.max.x/2, bounds.max.y/2),
+			});
+			console.log("meow bobber:",this.current_scene.bobber);
 			//console.log(test_object.animation_data);
 
 			//this.collsion_map.is_in_bounds(test_object);

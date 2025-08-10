@@ -353,6 +353,7 @@ class Scene_Object {
 
     #visibility = true;
     #collision = true;
+    #flag_as_destory = false;
 
     get visibility(){
         return this.#visibility;
@@ -397,11 +398,13 @@ class Scene_Object {
     }
 
     destroy(){
-        this.notify_signal.emit(this,"destroy");
+        this.#flag_as_destory = true;
+        //this.notify_signal.emit(this,"destroy");
     }
 
     render(){
         return {
+            type:"image",
             image:this.image_source,
             x:0,
             y:0,
@@ -410,7 +413,12 @@ class Scene_Object {
         }
     };
     
-    update(delta = 1.0){};
+    update(delta = 1.0){
+        if (this.#flag_as_destory){
+            this.notify_signal.emit(this,"destroy");
+            return;
+        }
+    };
 
     constructor(options = {}){
         console.log("mew?",options['id'], options['id'] != null ? options['id'] : -1);
@@ -593,6 +601,8 @@ class Scene {
 
         this.scene_objects.clear();
     }
+    //TODO: decided if this should be kept or converted to a collsion map set up and store 
+    //it the map ref to this scene
     assign_collsion_map(collsion_map){
         this.collsion_map = collsion_map;
         collsion_map.is_in_bounds = (value) => {
@@ -673,7 +683,10 @@ class Canvas_Scene extends Scene{
         //Note: could copy the point, but should try to keep most these
         //function pure unless they are setting/updating the position or something
         if(scene_object){
-            return this.viewport.is_in_viewport(scene_object.position)
+            if (scene_object.visibility){
+                return this.viewport.is_in_viewport(scene_object.position)
+            }
+            return false;
         }
         return false;
     }
@@ -681,17 +694,24 @@ class Canvas_Scene extends Scene{
         let render_image = scene_object.render();
         if (render_image !== null) {
             if (canvas_context !== null) {
-                canvas_context.drawImage(
-                    render_image.image,
-                    render_image.x,
-                    render_image.y,
-                    render_image.width,
-                    render_image.height,
-                    scene_object.position.x,
-                    scene_object.position.y,
-                    render_image.width, //TODO: times scale
-                    render_image.height, //TODO: times scale
-                );
+                if (render_image.type == "image"){
+                    canvas_context.drawImage(
+                        render_image.image,
+                        render_image.x,
+                        render_image.y,
+                        render_image.width,
+                        render_image.height,
+                        scene_object.position.x,
+                        scene_object.position.y,
+                        render_image.width * scene_object.scale.x, //TODO: times scale
+                        render_image.height * scene_object.scale.y, //TODO: times scale
+                    );
+                    return;
+                }
+                if (render_image.type == "rect"){
+                    canvas_context.fillStyle = render_image['color'] || '#000000';
+                    canvas_context.fillRect(scene_object.position.x,scene_object.position.y, render_image.width, render_image.height);
+                }
             }
             else {console.log("canvas_context is null");}
         }
