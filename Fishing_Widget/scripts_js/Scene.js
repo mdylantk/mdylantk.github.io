@@ -353,7 +353,7 @@ class Scene_Object {
 
     #visibility = true;
     #collision = true;
-    #flag_as_destory = false;
+    #flag_to_destory = false; //If true, will call the destroy logic next time update is called
 
     get visibility(){
         return this.#visibility;
@@ -398,7 +398,7 @@ class Scene_Object {
     }
 
     destroy(){
-        this.#flag_as_destory = true;
+        this.#flag_to_destory = true;
         //this.notify_signal.emit(this,"destroy");
     }
 
@@ -414,21 +414,27 @@ class Scene_Object {
     };
     
     update(delta = 1.0){
-        if (this.#flag_as_destory){
+        if (this.#flag_to_destory){
             this.notify_signal.emit(this,"destroy");
             return;
         }
     };
 
     constructor(options = {}){
-        console.log("mew?",options['id'], options['id'] != null ? options['id'] : -1);
         this.id = options['id'] != null ? options['id'] : -1;
         this.position = options['position'] || new Point();
         this.scale = options['scale'] || new Point(1.0,1.0,1.0);
         this.rotation = options['rotation'] || new Point();
         this.image_source = options['image_source'] || null;
-        this.#visibility = options['visibility'] || this.#visibility;
-        this.#collision = options['collision'] || this.#collision;
+        //NOTE: setting directly since signals are not likly to be assigned
+        //so it the scene responsibility to check the state before ready and 
+        //run the nessary logic
+        if ('visibility' in options){
+            this.#visibility = options['visibility'];
+        }
+        if ('collision' in options){
+            this.#collision = options['collision'];
+        }
     }
 }
 
@@ -567,7 +573,7 @@ class Scene {
             this.scene_objects.set(scene_class,[]);  
         }
         class_container = this.scene_objects.get(scene_class);
-        console.log(class_container)
+        //console.log(class_container)
         id = class_container.length;
         for (let i = 0; i < class_container.length; i++) {
             if (class_container[i]){
@@ -576,10 +582,6 @@ class Scene {
             id = i;
             break;
         } 
-        //let id = this._object_count;
-        //let events = options["events"] || {}
-        //events.scene = this.scene_events;
-        //options["events"] = events;
         options["id"] = id;
         scene_object = new scene_class(options);
         scene_object.notify_signal.subscribe("owning_scene",function(object,notification){
@@ -588,7 +590,6 @@ class Scene {
             }
         });
         class_container[id] = scene_object;
-        //this.scene_objects.set(id, scene_object);
         this._object_count += 1;
         scene_object.on_enter_scene();
         return scene_object;
@@ -613,7 +614,6 @@ class Scene {
             else if (value instanceof Scene_Object){
                 points.push(Point.copy(value.position));
             }
-            console.log(points);
             return true
         }
         collsion_map.get_bounds = () =>{
@@ -740,12 +740,6 @@ class Canvas_Scene extends Scene{
                 if (this.can_render_scene_object(scene_object,canvas_context)){
                     this.render_scene_object(scene_object,canvas_context);
                 }
-                else {
-                    console.log("object is not in view")
-                }
-            }
-            else{
-                console.log("null ref, either there holes in the array(fine) or the array is not resizing(not fine)")
             }
         });
     }
@@ -758,7 +752,7 @@ class Canvas_Scene extends Scene{
             this.viewport = new Canvas_Viewport({'canvas':canvas});
         }
         else {
-            console.log("MEOW NO VAILD CANVAS");
+            console.log("NO VAILD CANVAS");
         }
     }
 }

@@ -160,15 +160,17 @@
 			if (options['access_handler']){
 				let scene = options['access_handler'].get_access('scene')
 				this.scene_ref = scene;//this is for testing
+				//note: decide if the acess handler will know about the collsion map and just acess it that way
+				//or do it this way.
 				if (scene){
 					this.collsion_map = scene.get_collsion_map();
 				}
 				//this.collsion_map = options['access_handler'].get_access('collsion_map')
 			}
 
-			console.log("ai state: ",this.ai_state, Fish.AI_STATE);
-			console.log(Fish.AI_STATE[0],Fish.AI_STATE[1],Fish.AI_STATE[2]);
-			console.log(options);
+			//console.log("ai state: ",this.ai_state, Fish.AI_STATE);
+			//console.log(Fish.AI_STATE[0],Fish.AI_STATE[1],Fish.AI_STATE[2]);
+			//console.log(options);
 		}
 	}
 
@@ -185,14 +187,7 @@
 
 	//this is the impemention of the scene. It here so the scene can be removed of data it dose not need ref to
 	class Test_Scene extends Canvas_Scene {
-		//_counter = new Signal(0);
-		//get counter() {
-		//	return this._counter.value;
-		//}
-		//set counter(value) {
-		//	this._counter.value = value;
-		//	this._counter.emit(this._counter.value)
-		//}
+		access_handler = null;
 		handle_event(type,event) {
 			//can call the function directly if exist
 			//might need to check if it a function
@@ -204,18 +199,12 @@
 			}
 		}
 		on_click(event) {
-			//this.viewport.get_width(), this.viewport.get_height()
-			//todo: make sure to add a function to convert the mouse position into scene position
-			//what was it, use the viewport position and then offset it by the local pos if viewport
-			//but may need to be adjusted if position centered. if orgin is top left corner, then perhaps
-			//the sence position is the local pos plus the viewport position
 			if (this.viewport != null){
 				let mouse_position = new Point(event.clientX,event.clientY);
 				let handled = false;
 				if (this.viewport.is_in_viewport(new Point(event.clientX,event.clientY))){
 					console.log("meow click (x,y)",event.clientX,event.clientY);
 					let scene_position = Point.subtract(mouse_position,this.viewport.get_position())
-					//let scene_position = mouse_position.subtract(this.viewport.get_position())
 					console.log("meow scene position: ",scene_position);
 					this.for_each_scene_object((scene_object)=>{
 						if (handled) {return;}
@@ -233,9 +222,18 @@
 						}
                 	});
 					if (handled) {return;}
-					//toggle the bobber visibility if nothing else happens. for testing, will behave diffrent when catch fish logic is added
-					this.bobber.position = Point.copy(scene_position);
-					this.bobber.visibility = !this.bobber.visibility;
+					//this will check if it in the playable bounds
+					let bounds = this.collsion_map.get_bounds();
+					//Note: the check only for moving the bobber or well stating the bobber can be place there
+					//for reeling or what not, this check is not nessary unless needing to limit the vaild clickspot
+					if (scene_position.x >= bounds.min.x && scene_position.x <= bounds.max.x && scene_position.y >= bounds.min.y && scene_position.y <= bounds.max.y) {
+						//toggle the bobber visibility if nothing else happens. for testing, will behave diffrent when catch fish logic is added
+						this.bobber.position = Point.copy(scene_position);
+						this.bobber.visibility = !this.bobber.visibility;
+					}
+
+					//let bounds = this.collsion_map.get_bounds();
+					//this.move_to_point = new Point(Math.max(Math.random() * bounds.max.x, bounds.min.x), Math.max(Math.random() * bounds.max.y, bounds.min.y))
 				}
 			}
 		}
@@ -255,6 +253,12 @@
 				}
 			}
 		}
+		create_scene_object(scene_class, options = {}){
+			if (this.access_handler){
+				options["access_handler"] = this.access_handler;
+			}
+			return super.create_scene_object(scene_class,options)
+		}
 	}
 
 	async function fetch_json(url) {
@@ -270,16 +274,16 @@
 		animation_data : {},
 		fish_data : {},
 		current_scene : null,
-		scene_interface : new Scene_Interface(),
-		collsion_map : new CollisionMap(),
+		scene_interface : new Scene_Interface(), //this may or may not be used. it could be useful for providing extra feature to an object.
+		collsion_map : new CollisionMap(), //may keep a fix ref of it and have it overriden on scene switch like originally planed... unless keeping the scene interface than may use that
 		access_handler : new Access_Handler(),
 		//both the game and scene should have a spawn/create object function
 		//game version is responsible for assigning any nessary globals
 		//and scene for keeping track of it
 		spawn_object(object_class, options = {}) {
 			//can inject data into options as needed, but this means some data cant be override this way(unless skipping this and acessing scene directly)
-			options["collsion_map"] = this.collsion_map;
-			options["access_handler"] = this.access_handler;
+			//options["collsion_map"] = this.collsion_map;
+			//options["access_handler"] = this.access_handler;
 			const new_object = this.current_scene.create_scene_object(object_class,options);
 			//new_object.collsion_map = this.collsion_map;
 			return new_object
@@ -310,7 +314,8 @@
 		switch_scene(scene){
 			this.unregister_events();
 			this.current_scene = scene;
-			this.current_scene.assign_collsion_map(this.collsion_map); //this may be removed later when scene take full responsibility of it
+			this.current_scene.access_handler = this.access_handler;
+			this.current_scene.assign_collsion_map(this.collsion_map);//this.collsion_map); //this may be removed later when scene take full responsibility of it
 			this.register_events();
 			this.scene_interface.scene = scene;
 		},
@@ -328,7 +333,6 @@
 
 			this.switch_scene(new Test_Scene({
 				'canvas':document.getElementById("canvas_fishing_room"),
-				'collsion_map':this.collsion_map
 				}));
 			//console.log("MEWMEW: ", this.scene_interface, this.access_handler)
 			//this.current_scene = new Scene(document.getElementById("canvas_fishing_room"));
@@ -353,13 +357,14 @@
 			//can give it to its objects.
 			this.current_scene.bobber = this.spawn_object(Bobber, {
 				position: new Point(bounds.max.x/2, bounds.max.y/2),
+				visibility: false,
 			});
-			console.log("meow bobber:",this.current_scene.bobber);
+			//console.log("meow bobber:",this.current_scene.bobber);
 			//console.log(test_object.animation_data);
 
 			//this.collsion_map.is_in_bounds(test_object);
-			let test_bounds = this.collsion_map.get_bounds()
-			console.log(test_bounds, test_bounds.min, test_bounds.max);
+			//let test_bounds = this.collsion_map.get_bounds()
+			//console.log(test_bounds, test_bounds.min, test_bounds.max);
 			
 			//this.register_events();
 			//Watcher = new WeakRef(test_object);
