@@ -84,7 +84,8 @@
 
 		pick_new_destination(){
 			let bounds = this.collsion_map.get_bounds();
-			if (this.collsion_map){
+			let random_roll = Math.floor(Math.random() * 10) + 1;
+			if (this.collsion_map && random_roll <= 2){
 				//Note: could also add the visabilty check as a filter.
 				let bobbers = this.collsion_map.get_objects({"class_name":Bobber});
 				let bobber = bobbers[0];
@@ -93,12 +94,15 @@
 						//todo: use a diffrent state for moving to a object position 
 						//this would also allow it to move closer if needed as well as decided to interact 
 						//with the object when within range
-						//this.move_to_point.set(bobber.position);
-						//return
+						//or could have it log the bobber and if it is still nearby and active, it will attempt to bite, else remove the ref
+						this.target = bobber;
+						this.move_to_point.set(bobber.position);
+						return
 					}
 				}
 				//console.log(bobbers, this.collsion_map);
 			}
+			this.target = null;
 			this.move_to_point = new Point(Math.max(Math.random() * bounds.max.x, bounds.min.x), Math.max(Math.random() * bounds.max.y, bounds.min.y))
 		}
 		move(delta = 1.0){

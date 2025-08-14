@@ -76,6 +76,27 @@ class Point{
         new_point.axes = point.axes.slice()
         return new_point;
     }
+    //todo: add a equals static function that will loop the axes and check 
+    //if they are the same. also need to loop the deepest(dim wise) and convert
+    //undefine axies as 0s
+    /**
+     * @description check if the axes of each points are the same between diffrent points.
+     * used to populate a point if a number is pass up to the max_axes.
+     * @param {Point} point_a
+     * @param {Point} point_b
+     * @returns {Boolean} - returns false if any of the axis are not equal
+    */
+    static equals(point_a, point_b){
+        let max_axes = Math.max(point_a.axes.length,point_b.axes.length)
+        for(let i = 0; i < max_axes; i++){
+            let axis_a = point_a.axes[i] || 0;
+            let axis_b = point_b.axes[i] || 0;
+            if (axis_a != axis_b) {
+                return false
+            }
+        }
+        return true
+    }
     /**
      * @description convert the value into a point.
      * used to populate a point if a number is pass up to the max_axes.
