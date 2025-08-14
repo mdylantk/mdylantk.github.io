@@ -65,6 +65,16 @@
 		}
 	}
 
+	class Bobber extends Scene_Object {
+		render(){
+			return {
+				type:"rect",
+				color:'#8d0101ff',
+				width: 8,
+				height: 8
+			}
+		};
+	}
 
 	class Fish extends Scene_Object {
 		static AI_STATE = new Enumeration("IDLE","SWIM","HOOKED");
@@ -74,6 +84,21 @@
 
 		pick_new_destination(){
 			let bounds = this.collsion_map.get_bounds();
+			if (this.collsion_map){
+				//Note: could also add the visabilty check as a filter.
+				let bobbers = this.collsion_map.get_objects({"class_name":Bobber});
+				let bobber = bobbers[0];
+				if (bobber){
+					if (bobber.visibility){
+						//todo: use a diffrent state for moving to a object position 
+						//this would also allow it to move closer if needed as well as decided to interact 
+						//with the object when within range
+						//this.move_to_point.set(bobber.position);
+						//return
+					}
+				}
+				//console.log(bobbers, this.collsion_map);
+			}
 			this.move_to_point = new Point(Math.max(Math.random() * bounds.max.x, bounds.min.x), Math.max(Math.random() * bounds.max.y, bounds.min.y))
 		}
 		move(delta = 1.0){
@@ -172,17 +197,6 @@
 			//console.log(Fish.AI_STATE[0],Fish.AI_STATE[1],Fish.AI_STATE[2]);
 			//console.log(options);
 		}
-	}
-
-	class Bobber extends Scene_Object {
-		render(){
-			return {
-				type:"rect",
-				color:'#8d0101ff',
-				width: 8,
-				height: 8
-			}
-		};
 	}
 
 	//this is the impemention of the scene. It here so the scene can be removed of data it dose not need ref to

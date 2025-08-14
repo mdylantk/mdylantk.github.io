@@ -161,7 +161,12 @@ class Point{
         return Point.magnitude(direction );
     }
     //instance add is not pure and will set the value
-    set(x=0.0,y=0.0){
+    set(value){
+        //will use the axis of the provided point instead
+        //of assuming the arguments are all numbers
+        if (value instanceof Point){
+            this.axes = value.axes.slice();
+        }
         for (const axis of arguments) {
             if (isNaN(axis)){
                 this.axes.push(0.0);
@@ -520,7 +525,7 @@ class Scene {
                 });
             }
             else{
-                console.log(key, " is not related to ", class_name)
+                //console.log(key, " is not related to ", class_name)
             }
         })
     }
@@ -633,18 +638,20 @@ class Scene {
             return []
         }
         collsion_map.get_objects = (options={"filter" : function(object){return true} }) => {
+            let class_name = options["class_name"] || Scene_Object;
+            let objects = [];
             if (typeof options.filter === "function"){
-                let objects = [];
-                let class_name = options["class_name"] || Scene_Object;
-
                 this.for_each_scene_object_by_class(class_name,(object)=>{
                     if (options.filter(object)){
                         objects.push(object);
                     }
-                })
+                });
                 return objects;
             }
-            return Array.from(this.scene_objects.values());
+            this.for_each_scene_object_by_class(class_name,(object)=>{ 
+                objects.push(object);
+            });
+            return objects;
         }
     }
     render() {
