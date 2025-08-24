@@ -402,6 +402,9 @@ class Scene_Object {
             this.collision_signal.emit(this, this.#collision);
         }
     }
+    get is_flag_to_destory(){
+        return this.#flag_to_destory
+    }
 
     clear_signals(){
         this.visibility_signal.clear();

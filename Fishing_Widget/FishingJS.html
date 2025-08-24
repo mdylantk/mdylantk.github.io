@@ -17,7 +17,7 @@
 		</div>
 		<div id ="footer_fishing_room" style="position: relative;">
 			<img src="https://mdylantk.github.io/Fishing_Widget/assets/Title_Border.png" alt="dialog texture" style="z-index: 1;position: absolute;height:64px;width:320px;
-				border: 2px solid #000; background-color:cyan">
+				border: 2px solid #000; background-color:cyan; top:18;">
 			<div id="dialog_fishing_room" style="z-index:2; position: absolute;font-size:12px;height:64px;color:white;margin:4px;margin-left:6px;margin-right:6px;">
 					 
 			</div>
@@ -75,23 +75,39 @@
 				height: 8
 			}
 		};
+		update(delta=1.0){
+			super.update(delta);
+			if(this.hooked_fish){
+				if(this.hooked_fish.is_hooked()){
+					if(this.hooked_fish.is_flag_to_destory){
+						this.release();
+					}
+					else{
+					//should add sockets and get the relitive position base off of that
+					//so the fish mouth is at the bobber position. could also just use to to render where the line draws to when that get added
+						this.hooked_fish.position.set(this.position);
+					}
+				}
+			}
+		}
 		cast(position = new Point()){
 			this.position.set(position);
 			this.visibility = true;
 		}
-		reel(reel_in = false){
+		reel(reel_in = false, pull_direction = new Point()){
 			//todo: decide on who is the handler. fish may not need to know about the bobber
 			//if the bobber signal its location change and the fish listen
 			//but having the fish ref bobber allow more options at the cost of both knowing each other
 			//but even so the bobber need tot notify fish when it is released if fish did not trigger it(rare case?)
 			if (reel_in){
-				this.release();
 				this.visibility = false;
+				return this.release(); 
 			}
 			else{
 				//todo tetthis
-				this.position.subtract(new Point(-1,0));
+				this.position.subtract(pull_direction);
 			}
+			return null;
 		}
 		bite(fish = null){
 			if (fish && !this.hooked_fish){
@@ -100,10 +116,16 @@
 			}
 			return false
 		}
+		//may need a signal for the fish to react to if the fish ever need to notify for release
 		release(){
 			let released_fish = this.hooked_fish;
+			this.hooked_fish.ai_state = Fish.AI_STATE.IDLE;
 			this.hooked_fish = null;
 			return released_fish;
+		}
+		on_clicked(){
+			//May have this reel itself in when clicked so it and be cast again
+			console.log(this);
 		}
 	}
 
@@ -113,6 +135,14 @@
 		animation_frame = -1.0;
 		idle_time = 1.0;
 
+		is_hooked(){
+			//a check incase additional hjooked states are added
+			//or if hooked gets handled as a flag instead
+			if (this.ai_state === Fish.AI_STATE.HOOKED){
+				return true;
+			}
+			return false;
+		}
 		pick_new_destination(){
 			let bounds = this.collsion_map.get_bounds();
 			let random_roll = Math.floor(Math.random() * 10) + 1;
@@ -185,10 +215,12 @@
 			}
 			if (this.ai_state === Fish.AI_STATE.HOOKED){
 				//no hook case yet
-				if (this.target){
+				//should let bobber handles moving the fish base on its state
+				//while this run state modifcation like pull/look direction and tireness
+				//if (this.target){
 					//should check if type is bobber
-					this.position.set(this.target.position);
-				}
+				//	this.position.set(this.target.position);
+				//}
 				return
 			}
 			if (this.ai_state === Fish.AI_STATE.SWIM){
@@ -197,9 +229,19 @@
 				}
 				let distance_to_move = Point.distance_to(this.position,this.move_to_point);
 				if (distance_to_move < 4.0){
+					if (this.target){
+						let random_roll = Math.floor(Math.random() * 10) + 1;
+						if (random_roll >= 5 ){
+							if (this.target.bite(this)){
+								this.ai_state = Fish.AI_STATE.HOOKED;
+								return
+							}
+						}
+					}
 					//console.log("meow at ", this.move_to_point);
 					this.ai_state = Fish.AI_STATE.IDLE;
 					this.idle_time = Math.random()*10.0;
+					this.target = null;
 				}
 				else{
 					this.move(delta);
@@ -284,8 +326,20 @@
 						if(!this.bobber.visibility){
 							this.bobber.cast(scene_position);
 						}
-						else{
-							this.bobber.reel(true);
+						else{	
+							//the -8 is to reduce the distance needed. it may be better to use the bobber height when it is added
+							if(this.bobber.position.y >= this.viewport.get_height()-8){
+								
+								let caught_fish = this.bobber.reel(true);
+								console.log("mew caught: ", caught_fish);
+							}
+							else{
+								this.bobber.reel(false ,new Point(0,-1));
+							}
+							//this.bobber.reel(this.bobber.position.y >= this.viewport.get_height()-8 ,new Point(0,-1));
+							//a diffrent area would need to be used for fishing area. below if incase the actuall world bounds is the fishing area
+							//and above if the viewport is the bounds
+							//this.bobber.reel(this.bobber.position.y > bounds.max.y,new Point(0,-1));
 						}
 						//this.bobber.position = Point.copy(scene_position);
 						//this.bobber.visibility = !this.bobber.visibility;
