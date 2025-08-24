@@ -66,6 +66,7 @@
 	}
 
 	class Bobber extends Scene_Object {
+		hooked_fish = null;
 		render(){
 			return {
 				type:"rect",
@@ -74,6 +75,36 @@
 				height: 8
 			}
 		};
+		cast(position = new Point()){
+			this.position.set(position);
+			this.visibility = true;
+		}
+		reel(reel_in = false){
+			//todo: decide on who is the handler. fish may not need to know about the bobber
+			//if the bobber signal its location change and the fish listen
+			//but having the fish ref bobber allow more options at the cost of both knowing each other
+			//but even so the bobber need tot notify fish when it is released if fish did not trigger it(rare case?)
+			if (reel_in){
+				this.release();
+				this.visibility = false;
+			}
+			else{
+				//todo tetthis
+				this.position.subtract(new Point(-1,0));
+			}
+		}
+		bite(fish = null){
+			if (fish && !this.hooked_fish){
+				this.hooked_fish = fish;
+				return true;
+			}
+			return false
+		}
+		release(){
+			let released_fish = this.hooked_fish;
+			this.hooked_fish = null;
+			return released_fish;
+		}
 	}
 
 	class Fish extends Scene_Object {
@@ -154,6 +185,10 @@
 			}
 			if (this.ai_state === Fish.AI_STATE.HOOKED){
 				//no hook case yet
+				if (this.target){
+					//should check if type is bobber
+					this.position.set(this.target.position);
+				}
 				return
 			}
 			if (this.ai_state === Fish.AI_STATE.SWIM){
@@ -161,7 +196,7 @@
 					this.pick_new_destination();
 				}
 				let distance_to_move = Point.distance_to(this.position,this.move_to_point);
-				if (distance_to_move < 32.0){
+				if (distance_to_move < 4.0){
 					//console.log("meow at ", this.move_to_point);
 					this.ai_state = Fish.AI_STATE.IDLE;
 					this.idle_time = Math.random()*10.0;
@@ -246,8 +281,14 @@
 					//for reeling or what not, this check is not nessary unless needing to limit the vaild clickspot
 					if (scene_position.x >= bounds.min.x && scene_position.x <= bounds.max.x && scene_position.y >= bounds.min.y && scene_position.y <= bounds.max.y) {
 						//toggle the bobber visibility if nothing else happens. for testing, will behave diffrent when catch fish logic is added
-						this.bobber.position = Point.copy(scene_position);
-						this.bobber.visibility = !this.bobber.visibility;
+						if(!this.bobber.visibility){
+							this.bobber.cast(scene_position);
+						}
+						else{
+							this.bobber.reel(true);
+						}
+						//this.bobber.position = Point.copy(scene_position);
+						//this.bobber.visibility = !this.bobber.visibility;
 					}
 
 					//let bounds = this.collsion_map.get_bounds();
