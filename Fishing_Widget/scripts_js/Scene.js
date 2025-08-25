@@ -181,6 +181,12 @@ class Point{
         let direction = Point.direction_to(point_a,point_b);
         return Point.magnitude(direction );
     }
+    //This will reset each axis 0, but wont trim or grow the array
+    zero(){
+        for (let i = 0; i < this.axes.length; i++){
+            this.axes[i] = 0.0;
+        }
+    }
     //instance add is not pure and will set the value
     set(value){
         //will use the axis of the provided point instead
@@ -201,7 +207,10 @@ class Point{
         let point = Point.convert(value);
         for (let i = 0; i < point.axes.length; i++){
             if (!isNaN(this.axes[i])){
-                this.axes[i] += point.axes[i] || 0.0
+                this.axes[i] += point.axes[i] || 0.0;
+            }
+            else if(point.axes[i] != 0) {
+                this.axes[i] = point.axes[i];
             }
         }
     }
@@ -211,8 +220,12 @@ class Point{
             if (!isNaN(this.axes[i])){
                 this.axes[i] -= point.axes[i] || 0.0
             }
+            else if(point.axes[i] != 0) {
+                this.axes[i] = point.axes[i];
+            }
         }
     }
+    //NOTE: the else case would not work with multipy or divide since the axis would be consider a 0
     multiply(value = 1.0){
         let point = Point.convert(value);
         for (let i = 0; i < point.axes.length; i++){

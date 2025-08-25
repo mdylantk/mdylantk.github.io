@@ -67,6 +67,9 @@
 
 	class Bobber extends Scene_Object {
 		hooked_fish = null;
+		velocity = new Point(); //TODO: decide if a base class should have this. this is diffrent from direction. 
+		//since it represents movement over time while direction is facing. note: direction might need to be added to the extion of the base class
+		//like a canvas scene object or a character/pawnn/entity object 
 		render(){
 			return {
 				type:"rect",
@@ -77,6 +80,11 @@
 		};
 		update(delta=1.0){
 			super.update(delta);
+			let current_velocity = Point.multiply(this.velocity, Point.convert(delta));
+			this.position.add(current_velocity);
+			this.velocity.subtract(current_velocity);
+			//this.velocity.zero();
+			//this.position.add(Point.multiply(this.velocity, new Point(delta,delta)));
 			if(this.hooked_fish){
 				if(this.hooked_fish.is_hooked()){
 					if(this.hooked_fish.is_flag_to_destory){
@@ -104,8 +112,8 @@
 				return this.release(); 
 			}
 			else{
-				//todo tetthis
-				this.position.subtract(pull_direction);
+				this.velocity.add(pull_direction);
+				//return this.hooked_fish; //not sure if it should return the fish that is currenly hooked
 			}
 			return null;
 		}
@@ -119,8 +127,9 @@
 		//may need a signal for the fish to react to if the fish ever need to notify for release
 		release(){
 			let released_fish = this.hooked_fish;
-			this.hooked_fish.ai_state = Fish.AI_STATE.IDLE;
+			released_fish.ai_state = Fish.AI_STATE.IDLE;
 			this.hooked_fish = null;
+			this.velocity.zero();
 			return released_fish;
 		}
 		on_clicked(){
@@ -134,6 +143,7 @@
 		ai_state = Fish.AI_STATE.IDLE;
 		animation_frame = -1.0;
 		idle_time = 1.0;
+		move_to_point = new Point();
 
 		is_hooked(){
 			//a check incase additional hjooked states are added
@@ -157,6 +167,7 @@
 						//with the object when within range
 						//or could have it log the bobber and if it is still nearby and active, it will attempt to bite, else remove the ref
 						this.target = bobber;
+						
 						this.move_to_point.set(bobber.position);
 						return
 					}
@@ -167,7 +178,7 @@
 			this.move_to_point = new Point(Math.max(Math.random() * bounds.max.x, bounds.min.x), Math.max(Math.random() * bounds.max.y, bounds.min.y))
 		}
 		move(delta = 1.0){
-			let speed = delta * 1.0;
+			let speed = delta * 10.0;//Note:delta will be less than 1 normally. probably should be around 1/60 or 1/30, but testing will be at 0.1
 			let direction = Point.normalize(Point.direction_to(this.position,this.move_to_point));
 			this.direction = direction; //setting the facing to the move direction
 			let move_direction = Point.multiply(direction,Point.convert(speed));//.multiply(speed)
@@ -205,7 +216,9 @@
 		update(delta=1.0){
 			super.update(delta);
 			if (this.ai_state === Fish.AI_STATE.IDLE){
-				this.idle_time -= 1.0*delta;
+				this.idle_time -= 1.0*delta*10; //NOTE: updates at 1/10 seconds atm. 
+				//times by 10 because before it was using delta of 1. TODO make sure the init idle time takes only a frame else all 
+				//fish will do nothing for a second if spawn with the idle state
 				if (this.idle_time < 0){
 					//console.log(this.collsion_map.get_objects());//a test to see what is returned
 					this.pick_new_destination();
@@ -230,11 +243,17 @@
 				let distance_to_move = Point.distance_to(this.position,this.move_to_point);
 				if (distance_to_move < 4.0){
 					if (this.target){
-						let random_roll = Math.floor(Math.random() * 10) + 1;
-						if (random_roll >= 5 ){
-							if (this.target.bite(this)){
-								this.ai_state = Fish.AI_STATE.HOOKED;
-								return
+						//Note: this is a test case to prevent fish teleport. may need a state for following target
+						//since move to point may not be target position
+						let distance_to_target = Point.distance_to(this.position,this.target.position);
+						if (distance_to_target < 4.0){
+							let random_roll = Math.floor(Math.random() * 10) + 1;
+							if (random_roll >= 5 ){
+								if (this.target.bite(this)){
+									this.ai_state = Fish.AI_STATE.HOOKED;
+									this.target = null;
+									return
+								}
 							}
 						}
 					}
@@ -334,15 +353,13 @@
 								console.log("mew caught: ", caught_fish);
 							}
 							else{
-								this.bobber.reel(false ,new Point(0,-1));
+								this.bobber.reel(false ,new Point(0,4)); //TODO rod reel strength should be used. also need to pull to the caster (center)
+								//so that when the fish fight logic is added, the fish will be pulled bottom center. so the normal of that times the strength
+								//TODO: also add a way (signal?) so that the bobber will notify this if it out of bounds (either within reel in range or outside of cast length)
+								//also cast length should limit the distance the fish can pull at the cost of the line damage base off of pull strength
+								//NOTE: sometimes the fish seem to teleport to the bobber, so the fish state should be checked
 							}
-							//this.bobber.reel(this.bobber.position.y >= this.viewport.get_height()-8 ,new Point(0,-1));
-							//a diffrent area would need to be used for fishing area. below if incase the actuall world bounds is the fishing area
-							//and above if the viewport is the bounds
-							//this.bobber.reel(this.bobber.position.y > bounds.max.y,new Point(0,-1));
 						}
-						//this.bobber.position = Point.copy(scene_position);
-						//this.bobber.visibility = !this.bobber.visibility;
 					}
 
 					//let bounds = this.collsion_map.get_bounds();
@@ -482,8 +499,8 @@
 			//this.register_events();
 			//Watcher = new WeakRef(test_object);
 			this.main_loop_id = setInterval(() => {
-				this.current_scene.update();
-				this.current_scene.render();
+				this.current_scene.update(0.1);
+				this.current_scene.render(0.1);
 			}, 100);
 		},
 	};
