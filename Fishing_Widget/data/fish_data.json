@@ -1,83 +1,92 @@
 {
-    "Carp": {
-        "min_weight":1.0,
-        "max_weight":15.0,
-        "aggressiveness":1.0,
-        "diet":["vegeatbles","bread","nuts","worms","cut_bait"],
-        "saltwater": false,
-        "detection_range":32.0,
-        "freshwater": true
-    },
-    "Catfish": {
-        "min_weight":0.5,
-        "max_weight":100.0,
-        "aggressiveness":1.0,
-        "diet":["live-bait","cut_bait"],
-        "saltwater": false,
-        "detection_range":32.0,
-        "freshwater": true
-    },
-    "Crappie": {
-        "min_weight":0.25,
-        "max_weight":0.75,
-        "aggressiveness":1.0,
-        "diet":["vegeatbles","bread","nuts","worms","cut_bait"],
-        "saltwater": false,
-        "detection_range":32.0,
-        "freshwater": true
-    },
-    "Trout": {
-        "min_weight": 1.0,
-        "max_weight": 8.0,
-        "aggressiveness":1.0,
-        "diet":["insects","small_fish","live_bait"],
-        "saltwater": false,
-        "detection_range":32.0,
-        "freshwater": true
-    },
-    "Largemouth Bass": {
-        "min_weight":0.5,
-        "max_weight":2.0,
-        "aggressiveness":1.0,
-        "diet":["insects","small_fish","live_bait","worms","cut_bait"],
-        "saltwater": false,
-        "detection_range":32.0,
-        "freshwater": true
-    },
-    "Salmon": {
-        "min_weight":3.0,
-        "max_weight":6.0,
-        "aggressiveness":1.0,
-        "diet":["insects","small_fish","live_bait","vegeatbles","bread","nuts","worms","cut_bait"],
-        "saltwater": true,
-        "detection_range":32.0,
-        "freshwater": true
-    },
-    "Smallmouth Bass": {
-        "min_weight":0.4,
-        "max_weight":2.4,
-        "aggressiveness":2.0,
-        "diet":["crayfish"],
-        "saltwater": false,
-        "detection_range":32.0,
-        "freshwater": true
-    },
-    "Sturgeon": {
-        "min_weight":160.0,
-        "max_weight":360.0,
-        "aggressiveness":2.0,
-        "diet":["crayfish","small_fish","worms","clams"],
-        "saltwater": false,
-        "detection_range":32.0,
-        "freshwater": true
-    },
-    "Walleye": {
-        "min_weight":4.0,
-        "max_weight":10.0,
-        "aggressiveness":1.0,
-        "diet":["small_fish","worms"],
-        "saltwater": false,
-        "detection_range":32.0,
-        "freshwater": true
-    }
+	"Carp": {
+		"name":"Carp",
+		"min_weight":1.0,
+		"max_weight":15.0,
+		"aggressiveness":1.0,
+		"diet":["vegeatbles","bread","nuts","worms","cut_bait"],
+		"saltwater": false,
+		"detection_range":32.0,
+		"freshwater": true
+	},
+	"Catfish": {
+		"name":"Catfish",
+		"min_weight":0.5,
+		"max_weight":100.0,
+		"aggressiveness":1.0,
+		"diet":["live-bait","cut_bait"],
+		"saltwater": false,
+		"detection_range":32.0,
+		"freshwater": true
+	},
+	"Crappie": {
+		"name":"Crappie",
+		"min_weight":0.25,
+		"max_weight":0.75,
+		"aggressiveness":1.0,
+		"diet":["vegeatbles","bread","nuts","worms","cut_bait"],
+		"saltwater": false,
+		"detection_range":32.0,
+		"freshwater": true
+	},
+	"Trout": {
+		"name":"Trout",
+		"min_weight": 1.0,
+		"max_weight": 8.0,
+		"aggressiveness":1.0,
+		"diet":["insects","small_fish","live_bait"],
+		"saltwater": false,
+		"detection_range":32.0,
+		"freshwater": true
+	},
+	"Largemouth Bass": {
+		"name":"Largemouth Bass",
+		"min_weight":0.5,
+		"max_weight":2.0,
+		"aggressiveness":1.0,
+		"diet":["insects","small_fish","live_bait","worms","cut_bait"],
+		"saltwater": false,
+		"detection_range":32.0,
+		"freshwater": true
+	},
+	"Salmon": {
+		"name":"Salmon",
+		"min_weight":3.0,
+		"max_weight":6.0,
+		"aggressiveness":1.0,
+		"diet":["insects","small_fish","live_bait","vegeatbles","bread","nuts","worms","cut_bait"],
+		"saltwater": true,
+		"detection_range":32.0,
+		"freshwater": true
+	},
+	"Smallmouth Bass": {
+		"name":"Smallmouth Bass",
+		"min_weight":0.4,
+		"max_weight":2.4,
+		"aggressiveness":2.0,
+		"diet":["crayfish"],
+		"saltwater": false,
+		"detection_range":32.0,
+		"freshwater": true
+	},
+	"Sturgeon": {
+		"name":"Sturgeon",
+		"min_weight":160.0,
+		"max_weight":360.0,
+		"aggressiveness":2.0,
+		"diet":["crayfish","small_fish","worms","clams"],
+		"saltwater": false,
+		"detection_range":32.0,
+		"freshwater": true
+	},
+	"Walleye": {
+		"name":"Walleye",
+		"min_weight":4.0,
+		"max_weight":10.0,
+		"aggressiveness":1.0,
+		"diet":["small_fish","worms"],
+		"saltwater": false,
+		"detection_range":32.0,
+		"freshwater": true
+	}
 }

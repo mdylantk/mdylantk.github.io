@@ -281,6 +281,8 @@
 			this.animation = options['animation'] || "swim_right";
 			this.animation_speed = options['animation_speed'] || 0.4;
 			//this.collsion_map = options['collsion_map'] || null;
+			this.fish_data = options['fish_data'] || {}; //note may handle this as an id
+			//and have a data access pass to fetch it from
 
 			if (options['access_handler']){
 				let scene = options['access_handler'].get_access('scene')
@@ -350,7 +352,7 @@
 							if(this.bobber.position.y >= this.viewport.get_height()-8){
 								
 								let caught_fish = this.bobber.reel(true);
-								console.log("mew caught: ", caught_fish);
+								console.log("mew caught: ", caught_fish.fish_data.name, caught_fish.fish_data);
 							}
 							else{
 								this.bobber.reel(false ,new Point(0,4)); //TODO rod reel strength should be used. also need to pull to the caster (center)
@@ -450,8 +452,9 @@
 			this.scene_interface.scene = scene;
 		},
 		async setup () {
-			this.animation_data = await fetch_json('https://mdylantk.github.io/Fishing_Widget/data/animation_data.json');
-			this.fish_data = await fetch_json('https://mdylantk.github.io/Fishing_Widget/data/fish_data.json');
+			//this.animation_data = await fetch_json('https://mdylantk.github.io/Fishing_Widget/data/animation_data.json');
+			this.animation_data = await fetch_json('./data/animation_data.json');
+			this.fish_data = await fetch_json('./data/fish_data.json');
 			console.log(this.animation_data);
 			console.log(this.fish_data);
 			this.access_handler.accesses = {
@@ -474,13 +477,18 @@
 			//console.log(this.current_scene.constructor.name, this.current_scene.constructor == Test_Scene ); //a way to get the class ref
 			
 			let bounds = this.current_scene.collsion_map.get_bounds();
+			let fish_list = Object.keys(this.fish_data);
 			for (let i = 0; i < 16; i++) {
 				let random_point = new Point(Math.max(Math.random() * bounds.max.x, bounds.min.x), Math.max(Math.random() * bounds.max.y, bounds.min.y))
-
+				let fish_id = fish_list[Math.floor(Math.random() * fish_list.length)];
 				this.spawn_object(Fish, {
 					position: random_point,
 					image_source: document.getElementById("fish_image"),
-					animation_data: this.animation_data.fish
+					animation_data: this.animation_data.fish,
+					fish_data: this.fish_data[fish_id] //need to decide on the name. fish data is what it is for that single fish, but may be misleading
+					//also could have it inject the data into itself, but that will make changes harder
+					//on that note, just providing the id and a acess to the fish data would be more ideal so the static data could be
+					//updated without catching the old
 				});
 			}
 			//todo: try to give the scene the ref of the acess handler and such so it
