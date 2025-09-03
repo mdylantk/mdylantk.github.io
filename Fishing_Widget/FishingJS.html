@@ -80,8 +80,23 @@
 		};
 		update(delta=1.0){
 			super.update(delta);
+			let pull_velocity = new Point();
+			if(this.hooked_fish){
+				if (this.hooked_fish.is_fighting){
+					//this is a test. should add a speed to project move so it can be scaled to the fish strength
+					//NOTE: project_move do not work well. also need to change pick move to pointor at least have a funtion
+					//for getting a random point in bounds to ignore following the bobber.
+					pull_velocity.set(this.hooked_fish.direction);
+					//needs to be a float. also this should be base off of the rod max length. after a certain length, it
+					//should stop the fish from progressing
+					//could use total length from reel in point(plus scaling) or have the rod set anchore points (such last reel point)
+					pull_velocity.multiply(Point.convert(1.0));
+				}
+			}
+			//console.log(pull_velocity.axes);
 			let current_velocity = Point.multiply(this.velocity, Point.convert(delta));
-			this.position.add(current_velocity);
+			pull_velocity.add(current_velocity);
+			this.position.add(pull_velocity);
 			this.velocity.subtract(current_velocity);
 			//this.velocity.zero();
 			//this.position.add(Point.multiply(this.velocity, new Point(delta,delta)));
@@ -144,6 +159,11 @@
 		animation_frame = -1.0;
 		idle_time = 1.0;
 		move_to_point = new Point();
+		direction = new Point();
+
+		//ai stats for advance ai tests
+		is_fighting = false;
+		stamina = 100.0;
 
 		is_hooked(){
 			//a check incase additional hjooked states are added
@@ -152,6 +172,14 @@
 				return true;
 			}
 			return false;
+		}
+		update_animation(){
+			if (this.direction.x > 0){
+				this.animation = "swim_right";
+			}
+			else if (this.direction.x < 0){
+				this.animation = "swim_left";
+			}
 		}
 		pick_new_destination(){
 			let bounds = this.collsion_map.get_bounds();
@@ -177,12 +205,23 @@
 			this.target = null;
 			this.move_to_point = new Point(Math.max(Math.random() * bounds.max.x, bounds.min.x), Math.max(Math.random() * bounds.max.y, bounds.min.y))
 		}
+		//there are cases where one would want to know how the move would have went before confirming it.
+		//also this allow a fake move to be handled.
+		project_move(delta = 1.0, base_speed = 10.0){
+			let speed = delta * base_speed;//Note:delta will be less than 1 normally. probably should be around 1/60 or 1/30, but testing will be at 0.1
+			//let direction = Point.normalize(Point.direction_to(this.position,this.move_to_point));
+			//this.direction = direction; //setting the facing to the move direction
+			let move_direction = Point.multiply(this.direction,Point.convert(speed));//.multiply(speed)
+			return Point.add(this.position,move_direction);
+		}
 		move(delta = 1.0){
-			let speed = delta * 10.0;//Note:delta will be less than 1 normally. probably should be around 1/60 or 1/30, but testing will be at 0.1
-			let direction = Point.normalize(Point.direction_to(this.position,this.move_to_point));
-			this.direction = direction; //setting the facing to the move direction
-			let move_direction = Point.multiply(direction,Point.convert(speed));//.multiply(speed)
-			this.position = Point.add(this.position,move_direction);
+			this.direction.set(Point.normalize(Point.direction_to(this.position,this.move_to_point)));
+			this.position.set(this.project_move(delta));
+			//let speed = delta * 10.0;//Note:delta will be less than 1 normally. probably should be around 1/60 or 1/30, but testing will be at 0.1
+			//let direction = Point.normalize(Point.direction_to(this.position,this.move_to_point));
+			//this.direction = direction; //setting the facing to the move direction
+			//let move_direction = Point.multiply(direction,Point.convert(speed));//.multiply(speed)
+			//this.position = Point.add(this.position,move_direction);
 		}
 		on_clicked(){
 			console.log("fish is clicked");
@@ -227,6 +266,22 @@
 				return
 			}
 			if (this.ai_state === Fish.AI_STATE.HOOKED){
+				if (this.is_fighting){
+					this.stamina -= 1.0;
+					if (this.stamina <= 0) {
+						this.is_fighting = false;
+					}
+				}
+				else {
+					this.stamina += 1.0;
+					if (this.stamina >= 100) {
+						this.is_fighting = true;
+						//should add a bit of random and have it pick a direction
+						//so it act like it tring to escape
+						this.pick_new_destination();
+						this.direction.set(Point.normalize(Point.direction_to(this.position,this.move_to_point)));
+					}
+				}
 				//no hook case yet
 				//should let bobber handles moving the fish base on its state
 				//while this run state modifcation like pull/look direction and tireness
@@ -234,6 +289,7 @@
 					//should check if type is bobber
 				//	this.position.set(this.target.position);
 				//}
+				this.update_animation();
 				return
 			}
 			if (this.ai_state === Fish.AI_STATE.SWIM){
@@ -264,15 +320,11 @@
 				}
 				else{
 					this.move(delta);
-					if (this.direction.x > 0){
-						this.animation = "swim_right";
-					}
-					else if (this.direction.x < 0){
-						this.animation = "swim_left";
-					}
+					this.update_animation();
 				}
 				return
 			}
+			
 		}
 		constructor(options = {}){
 			super(options);
