@@ -80,23 +80,35 @@
 		};
 		update(delta=1.0){
 			super.update(delta);
-			let pull_velocity = new Point();
+			let fish_pull_velocity = new Point();
+			let current_velocity = Point.multiply(this.velocity, Point.convert(delta));
 			if(this.hooked_fish){
+				this.hooked_fish.while_hooked(current_velocity); //could have it return a state/dictionary to reduce public data on fish
 				if (this.hooked_fish.is_fighting){
 					//this is a test. should add a speed to project move so it can be scaled to the fish strength
 					//NOTE: project_move do not work well. also need to change pick move to pointor at least have a funtion
 					//for getting a random point in bounds to ignore following the bobber.
-					pull_velocity.set(this.hooked_fish.direction);
+					fish_pull_velocity.set(this.hooked_fish.direction);
 					//needs to be a float. also this should be base off of the rod max length. after a certain length, it
 					//should stop the fish from progressing
 					//could use total length from reel in point(plus scaling) or have the rod set anchore points (such last reel point)
-					pull_velocity.multiply(Point.convert(1.0));
+					fish_pull_velocity.multiply(Point.convert(1.0));
+					//todo: add more functions to point. need to have an easy way to compare points
+					//we know where fish want to go and the pull force. we can reduce the fish direction so it effect the pull less
+					//but we want the fish to slow the pull velocity fast, but more away less
+					//maybe it as simple as using the line limit (so 0.0-1.0 base on max length from last anchor point) as well as the fish strength times
+					//direction for distance travel and countering the pull. if enough line is left, the fish will swim up to that point. any extra distance need to
+					//re-recaculated base on line constrans
+					//console.log(fish_pull_velocity.axes, current_velocity.axes);
 				}
 			}
-			//console.log(pull_velocity.axes);
-			let current_velocity = Point.multiply(this.velocity, Point.convert(delta));
-			pull_velocity.add(current_velocity);
-			this.position.add(pull_velocity);
+			fish_pull_velocity.add(current_velocity);
+			this.position.add(fish_pull_velocity);
+			if (this.position.y < 150) {
+				//dirty way to limit the direction the fish can pull
+				//should use the bounds or length
+				this.position.y = 150;
+			}
 			this.velocity.subtract(current_velocity);
 			//this.velocity.zero();
 			//this.position.add(Point.multiply(this.velocity, new Point(delta,delta)));
@@ -142,7 +154,9 @@
 		//may need a signal for the fish to react to if the fish ever need to notify for release
 		release(){
 			let released_fish = this.hooked_fish;
-			released_fish.ai_state = Fish.AI_STATE.IDLE;
+			if (released_fish) {
+				released_fish.ai_state = Fish.AI_STATE.IDLE;
+			}
 			this.hooked_fish = null;
 			this.velocity.zero();
 			return released_fish;
@@ -184,6 +198,7 @@
 		pick_new_destination(){
 			let bounds = this.collsion_map.get_bounds();
 			let random_roll = Math.floor(Math.random() * 10) + 1;
+			//console.log("roll: ", random_roll)
 			if (this.collsion_map && random_roll <= 2){
 				//Note: could also add the visabilty check as a filter.
 				let bobbers = this.collsion_map.get_objects({"class_name":Bobber});
@@ -203,14 +218,10 @@
 				//console.log(bobbers, this.collsion_map);
 			}
 			this.target = null;
-			this.move_to_point = new Point(Math.max(Math.random() * bounds.max.x, bounds.min.x), Math.max(Math.random() * bounds.max.y, bounds.min.y))
+			this.move_to_point.set(new Point(Math.max(Math.random() * bounds.max.x, bounds.min.x), Math.max(Math.random() * bounds.max.y, bounds.min.y)))
 		}
-		//there are cases where one would want to know how the move would have went before confirming it.
-		//also this allow a fake move to be handled.
 		project_move(delta = 1.0, base_speed = 10.0){
 			let speed = delta * base_speed;//Note:delta will be less than 1 normally. probably should be around 1/60 or 1/30, but testing will be at 0.1
-			//let direction = Point.normalize(Point.direction_to(this.position,this.move_to_point));
-			//this.direction = direction; //setting the facing to the move direction
 			let move_direction = Point.multiply(this.direction,Point.convert(speed));//.multiply(speed)
 			return Point.add(this.position,move_direction);
 		}
@@ -222,6 +233,29 @@
 			//this.direction = direction; //setting the facing to the move direction
 			//let move_direction = Point.multiply(direction,Point.convert(speed));//.multiply(speed)
 			//this.position = Point.add(this.position,move_direction);
+		}
+		while_hooked(pull_direction = new Point()){
+			//allows the fish to decide how to react to a pull. this most likly will be called every movement update
+			//basicly override the move update while being handled
+			//the idea is to have it set the fish direction to someplace base on the pull direction
+			if (this.is_fighting){
+				this.stamina -= 1.0;
+				if (this.stamina <= 0) {
+					this.is_fighting = false;
+				}
+			}
+			else {
+				this.stamina += 1.0;
+				if (this.stamina >= 100) {
+					this.is_fighting = true;
+						//should add a bit of random and have it pick a direction
+						//so it act like it tring to escape
+					//this.direction.set(new Point(Math.random() * 2.0 - 1.0, Math.random() * 2.0 - 1.0));
+					this.direction.set(new Point(Math.random() * 2.0 - 1.0, Math.random() * -1.0));
+					//this.direction.set(new Point(Math.random() * 2.0 - 1.0, pull_direction.y >= 0.0 ? Math.random() : Math.random()*-1.0 ));
+				}
+			}
+			this.update_animation();
 		}
 		on_clicked(){
 			console.log("fish is clicked");
@@ -255,10 +289,11 @@
 		update(delta=1.0){
 			super.update(delta);
 			if (this.ai_state === Fish.AI_STATE.IDLE){
+				//console.log(this.idle_time);
 				this.idle_time -= 1.0*delta*10; //NOTE: updates at 1/10 seconds atm. 
 				//times by 10 because before it was using delta of 1. TODO make sure the init idle time takes only a frame else all 
 				//fish will do nothing for a second if spawn with the idle state
-				if (this.idle_time < 0){
+				if (this.idle_time < 0.0){
 					//console.log(this.collsion_map.get_objects());//a test to see what is returned
 					this.pick_new_destination();
 					this.ai_state = Fish.AI_STATE.SWIM;
@@ -266,22 +301,22 @@
 				return
 			}
 			if (this.ai_state === Fish.AI_STATE.HOOKED){
-				if (this.is_fighting){
-					this.stamina -= 1.0;
-					if (this.stamina <= 0) {
-						this.is_fighting = false;
-					}
-				}
-				else {
-					this.stamina += 1.0;
-					if (this.stamina >= 100) {
-						this.is_fighting = true;
+				//if (this.is_fighting){
+				//	this.stamina -= 1.0;
+				//	if (this.stamina <= 0) {
+				//		this.is_fighting = false;
+				//	}
+				//}
+				//else {
+				//	this.stamina += 1.0;
+				//	if (this.stamina >= 100) {
+				//		this.is_fighting = true;
 						//should add a bit of random and have it pick a direction
 						//so it act like it tring to escape
-						this.pick_new_destination();
-						this.direction.set(Point.normalize(Point.direction_to(this.position,this.move_to_point)));
-					}
-				}
+				//		this.pick_new_destination();
+				//		this.direction.set(Point.normalize(Point.direction_to(this.position,this.move_to_point)));
+				//	}
+				//}
 				//no hook case yet
 				//should let bobber handles moving the fish base on its state
 				//while this run state modifcation like pull/look direction and tireness
@@ -289,21 +324,26 @@
 					//should check if type is bobber
 				//	this.position.set(this.target.position);
 				//}
-				this.update_animation();
+				//this.update_animation();
 				return
 			}
 			if (this.ai_state === Fish.AI_STATE.SWIM){
 				if (typeof this.move_to_point === "undefined"){
 					this.pick_new_destination();
+					//console.log("no move to point. generating a new one");
 				}
 				let distance_to_move = Point.distance_to(this.position,this.move_to_point);
 				if (distance_to_move < 4.0){
+					//console.log("near the move to point");
 					if (this.target){
+						//console.log("target: ", this.target);
 						//Note: this is a test case to prevent fish teleport. may need a state for following target
 						//since move to point may not be target position
 						let distance_to_target = Point.distance_to(this.position,this.target.position);
 						if (distance_to_target < 4.0){
+							//console.log("near the target");
 							let random_roll = Math.floor(Math.random() * 10) + 1;
+							//console.log("roll: ", random_roll);
 							if (random_roll >= 5 ){
 								if (this.target.bite(this)){
 									this.ai_state = Fish.AI_STATE.HOOKED;
@@ -317,6 +357,7 @@
 					this.ai_state = Fish.AI_STATE.IDLE;
 					this.idle_time = Math.random()*10.0;
 					this.target = null;
+					//console.log("new state: ", this.ai_state, "idle_time: ", this.idle_time);
 				}
 				else{
 					this.move(delta);
