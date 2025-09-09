@@ -179,7 +179,7 @@ class Point{
     }
     static distance_to(point_a, point_b){
         let direction = Point.direction_to(point_a,point_b);
-        return Point.magnitude(direction );
+        return Point.magnitude(direction);
     }
     //This will reset each axis 0, but wont trim or grow the array
     zero(){

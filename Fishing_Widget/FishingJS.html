@@ -70,6 +70,20 @@
 		velocity = new Point(); //TODO: decide if a base class should have this. this is diffrent from direction. 
 		//since it represents movement over time while direction is facing. note: direction might need to be added to the extion of the base class
 		//like a canvas scene object or a character/pawnn/entity object 
+
+		//the fisher is the reel_in_point normally. 
+		reel_in_point;// = new Point();//commented out since it should be set in constructor
+		//the offset is for incase the fisher can pull the rod left or right 
+		reel_in_offset = new Point(0.0,0.0); //NOTE: need to make sure the axes are floats and not ints else 
+		//may be better to use a float instead of a point(old velocity use)
+		reel_in_strength = 0.0;
+		//how much each pull(reel-in) will add.
+		base_reel_strength = 1.0;
+		//but it will not exceed the max
+		max_reel_strength = 10.0;
+		//the amount the bobber will slow down when not being reel in.
+		reel_drag = 1.0; 
+
 		render(){
 			return {
 				type:"rect",
@@ -80,38 +94,50 @@
 		};
 		update(delta=1.0){
 			super.update(delta);
-			let fish_pull_velocity = new Point();
-			let current_velocity = Point.multiply(this.velocity, Point.convert(delta));
+			//TODO: add a line length that is set base on the bobber distance from the reel_in_point when first reeling out
+			//and each time the reeler reel in. 
+			//This value will be used to reduce the distance the fish can moved when hooked if their direction is
+			//would put them further away from the reeler. (so need a way to check for that. could project the move before applying.
+			//could be simple as not moving if line length is too long and fish is moving away. only issue is that it wont move if at limit untill it pick a
+			//direction that would loosen the line)
+			let reel_in_point = Point.add(this.reel_in_point, this.reel_in_offset);
+			let pull_direction = Point.normalize(Point.direction_to(this.position, reel_in_point));
+			let counter_pull_direction = new Point();
+			let pull_velocity = new Point();
+			let pull_strengh = this.reel_in_strength;
 			if(this.hooked_fish){
-				this.hooked_fish.while_hooked(current_velocity); //could have it return a state/dictionary to reduce public data on fish
-				if (this.hooked_fish.is_fighting){
-					//this is a test. should add a speed to project move so it can be scaled to the fish strength
-					//NOTE: project_move do not work well. also need to change pick move to pointor at least have a funtion
-					//for getting a random point in bounds to ignore following the bobber.
-					fish_pull_velocity.set(this.hooked_fish.direction);
-					//needs to be a float. also this should be base off of the rod max length. after a certain length, it
-					//should stop the fish from progressing
-					//could use total length from reel in point(plus scaling) or have the rod set anchore points (such last reel point)
-					fish_pull_velocity.multiply(Point.convert(1.0));
-					//todo: add more functions to point. need to have an easy way to compare points
-					//we know where fish want to go and the pull force. we can reduce the fish direction so it effect the pull less
-					//but we want the fish to slow the pull velocity fast, but more away less
-					//maybe it as simple as using the line limit (so 0.0-1.0 base on max length from last anchor point) as well as the fish strength times
-					//direction for distance travel and countering the pull. if enough line is left, the fish will swim up to that point. any extra distance need to
-					//re-recaculated base on line constrans
-					//console.log(fish_pull_velocity.axes, current_velocity.axes);
+				counter_pull_direction.set(this.hooked_fish.direction);
+				this.hooked_fish.while_hooked(reel_in_point);
+				if (this.hooked_fish.is_fighting){ 
+					let fish_strength = 5.0; //TODO: get the strength from the fish
+					pull_strengh -= fish_strength;
 				}
 			}
-			fish_pull_velocity.add(current_velocity);
-			this.position.add(fish_pull_velocity);
+			if (pull_strengh < 0.0){
+				//fish is pulling
+				pull_velocity.set(Point.multiply(counter_pull_direction,Point.convert(Math.abs(pull_strengh*delta))));
+			}
+			else if (pull_strengh > 0.0) {
+				pull_velocity.set(Point.multiply(pull_direction,Point.convert(pull_strengh*delta)));
+			}
+			//this is more to slow down the bobber if there no reeling, but reeling on click make it a little odd to word
+			//if reel when click is held in, then this logic will be ignored when true. with clicks, this is the decay of reel
+			//strength so it will come to a stop eventually.
+			this.reel_in_strength -= this.reel_drag*delta;
+			//this.pull_strengh = Math.floor(this.pull_strengh);
+			if (this.reel_in_strength < 0.0) {
+				this.reel_in_strength = 0.0;
+			}
+			if (Point.magnitude(pull_velocity) >= 0.1){
+				//console.log("pull_pos: ", reel_in_point.axes, this.reel_in_point.axes, this.reel_in_strength);
+				//console.log(pull_velocity.axes, pull_direction.axes, pull_strengh);
+				this.position.add(pull_velocity);
+			}
 			if (this.position.y < 150) {
 				//dirty way to limit the direction the fish can pull
 				//should use the bounds or length
 				this.position.y = 150;
 			}
-			this.velocity.subtract(current_velocity);
-			//this.velocity.zero();
-			//this.position.add(Point.multiply(this.velocity, new Point(delta,delta)));
 			if(this.hooked_fish){
 				if(this.hooked_fish.is_hooked()){
 					if(this.hooked_fish.is_flag_to_destory){
@@ -140,6 +166,10 @@
 			}
 			else{
 				this.velocity.add(pull_direction);
+				this.reel_in_strength += this.base_reel_strength;
+				if (this.reel_in_strength > this.max_reel_strength){
+					this.reel_in_strength = this.max_reel_strength
+				}
 				//return this.hooked_fish; //not sure if it should return the fish that is currenly hooked
 			}
 			return null;
@@ -164,6 +194,10 @@
 		on_clicked(){
 			//May have this reel itself in when clicked so it and be cast again
 			console.log(this);
+		}
+		constructor(options = {}){
+			super(options);
+			this.reel_in_point = options['reel_in_point'] || new Point();
 		}
 	}
 
@@ -445,7 +479,9 @@
 							if(this.bobber.position.y >= this.viewport.get_height()-8){
 								
 								let caught_fish = this.bobber.reel(true);
-								console.log("mew caught: ", caught_fish.fish_data.name, caught_fish.fish_data);
+								if (caught_fish){
+									console.log("mew caught: ", caught_fish.fish_data.name, caught_fish.fish_data);
+								}
 							}
 							else{
 								this.bobber.reel(false ,new Point(0,4)); //TODO rod reel strength should be used. also need to pull to the caster (center)
@@ -589,6 +625,7 @@
 			this.current_scene.bobber = this.spawn_object(Bobber, {
 				position: new Point(bounds.max.x/2, bounds.max.y/2),
 				visibility: false,
+				reel_in_point: new Point(bounds.max.x/2, bounds.max.y)
 			});
 			//console.log("meow bobber:",this.current_scene.bobber);
 			//console.log(test_object.animation_data);
