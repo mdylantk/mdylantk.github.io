@@ -66,8 +66,9 @@
 	}
 
 	class Bobber extends Scene_Object {
+		fish_caught_signal = new Signal();
 		hooked_fish = null;
-		velocity = new Point(); //TODO: decide if a base class should have this. this is diffrent from direction. 
+		//velocity = new Point(); //TODO: decide if a base class should have this. this is diffrent from direction. 
 		//since it represents movement over time while direction is facing. note: direction might need to be added to the extion of the base class
 		//like a canvas scene object or a character/pawnn/entity object 
 
@@ -83,6 +84,8 @@
 		max_reel_strength = 10.0;
 		//the amount the bobber will slow down when not being reel in.
 		reel_drag = 1.0; 
+		
+		line_length = 0.0;
 
 		render(){
 			return {
@@ -92,8 +95,14 @@
 				height: 8
 			}
 		};
+		//update the line length base on the distance of the bobber and reeler.
+		//could add a loosen feature that acts as extra line untill it is used up(but would not move closer to the reeler untill used up)
+		update_line_length(){
+			this.line_length = Point.distance_to(this.position,this.reel_in_point);
+		}
 		update(delta=1.0){
 			super.update(delta);
+			if (!this.visibility){return}
 			//TODO: add a line length that is set base on the bobber distance from the reel_in_point when first reeling out
 			//and each time the reeler reel in. 
 			//This value will be used to reduce the distance the fish can moved when hooked if their direction is
@@ -105,6 +114,15 @@
 			let counter_pull_direction = new Point();
 			let pull_velocity = new Point();
 			let pull_strengh = this.reel_in_strength;
+			//line distance is a counter check to line length. if line distance is shorterthan length, the fish can move around freely
+			let line_distance = Point.distance_to(this.position,this.reel_in_point);
+
+			if (line_distance <= 8){
+				this.reel(true);
+				return;
+				
+			}
+
 			if(this.hooked_fish){
 				counter_pull_direction.set(this.hooked_fish.direction);
 				this.hooked_fish.while_hooked(reel_in_point);
@@ -115,7 +133,10 @@
 			}
 			if (pull_strengh < 0.0){
 				//fish is pulling
-				pull_velocity.set(Point.multiply(counter_pull_direction,Point.convert(Math.abs(pull_strengh*delta))));
+				if (line_distance <= this.line_length + 16.0){
+					//+16.0 is to allow the fish to move a little past the length
+					pull_velocity.set(Point.multiply(counter_pull_direction,Point.convert(Math.abs(pull_strengh*delta))));
+				}
 			}
 			else if (pull_strengh > 0.0) {
 				pull_velocity.set(Point.multiply(pull_direction,Point.convert(pull_strengh*delta)));
@@ -129,15 +150,18 @@
 				this.reel_in_strength = 0.0;
 			}
 			if (Point.magnitude(pull_velocity) >= 0.1){
-				//console.log("pull_pos: ", reel_in_point.axes, this.reel_in_point.axes, this.reel_in_strength);
-				//console.log(pull_velocity.axes, pull_direction.axes, pull_strengh);
 				this.position.add(pull_velocity);
 			}
-			if (this.position.y < 150) {
+			//double check here since this needs to be called after position is set
+			//may be condensed after clean up
+			if (pull_strengh > 0.0){
+				this.update_line_length();
+			}
+			//if (this.position.y < 150) {
 				//dirty way to limit the direction the fish can pull
 				//should use the bounds or length
-				this.position.y = 150;
-			}
+			//	this.position.y = 150;
+			//}
 			if(this.hooked_fish){
 				if(this.hooked_fish.is_hooked()){
 					if(this.hooked_fish.is_flag_to_destory){
@@ -154,6 +178,7 @@
 		cast(position = new Point()){
 			this.position.set(position);
 			this.visibility = true;
+			this.update_line_length();
 		}
 		reel(reel_in = false, pull_direction = new Point()){
 			//todo: decide on who is the handler. fish may not need to know about the bobber
@@ -162,10 +187,10 @@
 			//but even so the bobber need tot notify fish when it is released if fish did not trigger it(rare case?)
 			if (reel_in){
 				this.visibility = false;
-				return this.release(); 
+				return this.release(true); 
 			}
 			else{
-				this.velocity.add(pull_direction);
+				//this.velocity.add(pull_direction);
 				this.reel_in_strength += this.base_reel_strength;
 				if (this.reel_in_strength > this.max_reel_strength){
 					this.reel_in_strength = this.max_reel_strength
@@ -182,13 +207,17 @@
 			return false
 		}
 		//may need a signal for the fish to react to if the fish ever need to notify for release
-		release(){
+		release(caught = false){
 			let released_fish = this.hooked_fish;
 			if (released_fish) {
 				released_fish.ai_state = Fish.AI_STATE.IDLE;
 			}
 			this.hooked_fish = null;
-			this.velocity.zero();
+			//this.velocity.zero();
+			this.reel_in_strength = 0.0;
+			if (caught){
+				this.fish_caught_signal.emit(released_fish)
+			}
 			return released_fish;
 		}
 		on_clicked(){
@@ -284,8 +313,15 @@
 					this.is_fighting = true;
 						//should add a bit of random and have it pick a direction
 						//so it act like it tring to escape
-					//this.direction.set(new Point(Math.random() * 2.0 - 1.0, Math.random() * 2.0 - 1.0));
-					this.direction.set(new Point(Math.random() * 2.0 - 1.0, Math.random() * -1.0));
+					if (Math.random() > 0.75){
+						//move in a random direction
+						this.direction.set(new Point(Math.random() * 2.0 - 1.0, Math.random() * 2.0 - 1.0));
+					}
+					else{
+						//move in a random diretion, but with y not progressing
+						//Note: this may be better if y change isbase on the pull direction y to act as a fight against it 
+						this.direction.set(new Point(Math.random() * 2.0 - 1.0, Math.random() * -1.0));
+					}
 					//this.direction.set(new Point(Math.random() * 2.0 - 1.0, pull_direction.y >= 0.0 ? Math.random() : Math.random()*-1.0 ));
 				}
 			}
@@ -335,30 +371,6 @@
 				return
 			}
 			if (this.ai_state === Fish.AI_STATE.HOOKED){
-				//if (this.is_fighting){
-				//	this.stamina -= 1.0;
-				//	if (this.stamina <= 0) {
-				//		this.is_fighting = false;
-				//	}
-				//}
-				//else {
-				//	this.stamina += 1.0;
-				//	if (this.stamina >= 100) {
-				//		this.is_fighting = true;
-						//should add a bit of random and have it pick a direction
-						//so it act like it tring to escape
-				//		this.pick_new_destination();
-				//		this.direction.set(Point.normalize(Point.direction_to(this.position,this.move_to_point)));
-				//	}
-				//}
-				//no hook case yet
-				//should let bobber handles moving the fish base on its state
-				//while this run state modifcation like pull/look direction and tireness
-				//if (this.target){
-					//should check if type is bobber
-				//	this.position.set(this.target.position);
-				//}
-				//this.update_animation();
 				return
 			}
 			if (this.ai_state === Fish.AI_STATE.SWIM){
@@ -627,6 +639,9 @@
 				visibility: false,
 				reel_in_point: new Point(bounds.max.x/2, bounds.max.y)
 			});
+			this.current_scene.bobber.fish_caught_signal.subscribe(this,function(fish){
+				console.log(fish, " was caught. (notify by signal)");
+			})
 			//console.log("meow bobber:",this.current_scene.bobber);
 			//console.log(test_object.animation_data);
 
