@@ -18,7 +18,7 @@
 		<div id ="footer_fishing_room" style="position: relative;">
 			<img src="https://mdylantk.github.io/Fishing_Widget/assets/Title_Border.png" alt="dialog texture" style="z-index: 1;position: absolute;height:64px;width:320px;
 				border: 2px solid #000; background-color:cyan; top:18;">
-			<div id="dialog_fishing_room" style="z-index:2; position: absolute;font-size:12px;height:64px;color:white;margin:4px;margin-left:6px;margin-right:6px;">
+			<div id="dialog_fishing_room" style="z-index:2; position: absolute;font-size:12px;height:64px;color:white;margin:4px;margin-left:6px;margin-right:6px;top:18;">
 					 
 			</div>
 		</div>
@@ -113,9 +113,11 @@
 			let pull_direction = Point.normalize(Point.direction_to(this.position, reel_in_point));
 			let counter_pull_direction = new Point();
 			let pull_velocity = new Point();
+			//NOTE: would need to handle click hold case. it similar, but diffrent
 			let pull_strengh = this.reel_in_strength;
 			//line distance is a counter check to line length. if line distance is shorterthan length, the fish can move around freely
 			let line_distance = Point.distance_to(this.position,this.reel_in_point);
+			let fish_weight = 0.0;
 
 			if (line_distance <= 8){
 				this.reel(true);
@@ -126,9 +128,15 @@
 			if(this.hooked_fish){
 				counter_pull_direction.set(this.hooked_fish.direction);
 				this.hooked_fish.while_hooked(reel_in_point);
+				fish_weight = this.hooked_fish.weight
 				if (this.hooked_fish.is_fighting){ 
-					let fish_strength = 5.0; //TODO: get the strength from the fish
+					let fish_strength = 5.0 ; //TODO: get the strength from the fish
 					pull_strengh -= fish_strength;
+				}
+				else{
+					//reduce the strengh when reeling in big fish but only to a certian about of it. This allow 
+					//bigger fish to be harder without making the rapid click seem to go nowhere(or not work since it need some strength)
+					pull_strengh = Math.max(pull_strengh - fish_weight/10.0, pull_strengh/8.0)
 				}
 			}
 			if (pull_strengh < 0.0){
@@ -144,7 +152,8 @@
 			//this is more to slow down the bobber if there no reeling, but reeling on click make it a little odd to word
 			//if reel when click is held in, then this logic will be ignored when true. with clicks, this is the decay of reel
 			//strength so it will come to a stop eventually.
-			this.reel_in_strength -= this.reel_drag*delta;
+			//using weight to slow it down faster
+			this.reel_in_strength -= Math.max(fish_weight/10.0, this.reel_drag) *delta;
 			//this.pull_strengh = Math.floor(this.pull_strengh);
 			if (this.reel_in_strength < 0.0) {
 				this.reel_in_strength = 0.0;
@@ -157,11 +166,6 @@
 			if (pull_strengh > 0.0){
 				this.update_line_length();
 			}
-			//if (this.position.y < 150) {
-				//dirty way to limit the direction the fish can pull
-				//should use the bounds or length
-			//	this.position.y = 150;
-			//}
 			if(this.hooked_fish){
 				if(this.hooked_fish.is_hooked()){
 					if(this.hooked_fish.is_flag_to_destory){
@@ -422,6 +426,7 @@
 			//this.collsion_map = options['collsion_map'] || null;
 			this.fish_data = options['fish_data'] || {}; //note may handle this as an id
 			//and have a data access pass to fetch it from
+			this.weight = Math.random() * ((this.fish_data.max_weight || 1.0) - (this.fish_data.min_weight || 1.0)) + (this.fish_data.min_weight || 1.0);
 
 			if (options['access_handler']){
 				let scene = options['access_handler'].get_access('scene')
@@ -433,6 +438,7 @@
 				}
 				//this.collsion_map = options['access_handler'].get_access('collsion_map')
 			}
+			
 
 			//console.log("ai state: ",this.ai_state, Fish.AI_STATE);
 			//console.log(Fish.AI_STATE[0],Fish.AI_STATE[1],Fish.AI_STATE[2]);
@@ -491,9 +497,9 @@
 							if(this.bobber.position.y >= this.viewport.get_height()-8){
 								
 								let caught_fish = this.bobber.reel(true);
-								if (caught_fish){
-									console.log("mew caught: ", caught_fish.fish_data.name, caught_fish.fish_data);
-								}
+								//if (caught_fish){
+								//	console.log("mew caught: ", caught_fish.fish_data.name, caught_fish.fish_data);
+								//}
 							}
 							else{
 								this.bobber.reel(false ,new Point(0,4)); //TODO rod reel strength should be used. also need to pull to the caster (center)
@@ -640,7 +646,11 @@
 				reel_in_point: new Point(bounds.max.x/2, bounds.max.y)
 			});
 			this.current_scene.bobber.fish_caught_signal.subscribe(this,function(fish){
+				//dialog_fishing_room
 				console.log(fish, " was caught. (notify by signal)");
+				if (fish){
+					document.getElementById("dialog_fishing_room").innerHTML = `${fish.fish_data.name} was caught weighing ${fish.weight.toFixed(2)}kg.`;
+				}
 			})
 			//console.log("meow bobber:",this.current_scene.bobber);
 			//console.log(test_object.animation_data);
