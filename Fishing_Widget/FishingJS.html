@@ -452,6 +452,15 @@
 		handle_event(type,event) {
 			//can call the function directly if exist
 			//might need to check if it a function
+			//console.log(type,event)
+			if (type == "on_mousedown" || type == "on_touchstart"){
+				//todo: set the state of the bobber to reeling(by mouse holding)
+				console.log("pressed",type,event);
+			}
+			if(type == "on_mouseup" || type ==  "on_touchend"){
+				//todo: unset the state of the bobber to reeling(by mouse holding)
+				console.log("released",type,event);
+			}
 			if (this[type] && typeof this[type] === "function"){
 				this[type](event)
 				//may need to return if handled
@@ -570,25 +579,41 @@
 		register_events(){
 			//This connects the doc and scene events
 			//will ref self. this allow any reg events to be used as long as the current scene is vaild
+			const event_list = ["click","mousedown","touchstart","mouseup","touchend","mousemove","touchmove"]; 
 			let self = this;
-			document.addEventListener("click", function(){
-				if (self.current_scene){
-					self.current_scene.handle_event("on_click",event);
-				}
+			event_list.forEach((event_id) => {
+				document.addEventListener(event_id, function(){
+					if (self.current_scene){
+						self.current_scene.handle_event("on_"+ event_id,event);
+					}
+				});
 			});
+			//document.addEventListener("click", function(){
+			//	if (self.current_scene){
+			//		self.current_scene.handle_event("on_click",event);
+			//	}
+			//});
 		},
 		unregister_events(){
 			//This need to do the same as register_events, but instead remove the event
 			//this is importaint if changing scenes. if not handled, might cause memory leak
+			const event_list = ["click","mousedown","touchstart","mouseup","touchend","mousemove","touchmove"];
 			let self = this;
 			if (self.current_scene == null){
 				return
 			}
-			document.removeEventListener("click", function(){
-				if (self.current_scene){
-					self.current_scene.handle_event("on_click",event);
-				}
+			event_list.forEach((event_id) => {
+				document.removeEventListener(event_id, function(){
+					if (self.current_scene){
+						self.current_scene.handle_event("on_"+ event_id,event);
+					}
+				});
 			});
+			//document.removeEventListener("click", function(){
+			//	if (self.current_scene){
+			//		self.current_scene.handle_event("on_click",event);
+			//	}
+			//});
 		},
 		switch_scene(scene){
 			this.unregister_events();
@@ -600,10 +625,12 @@
 		},
 		async setup () {
 			//this.animation_data = await fetch_json('https://mdylantk.github.io/Fishing_Widget/data/animation_data.json');
+			//load data
 			this.animation_data = await fetch_json('./data/animation_data.json');
 			this.fish_data = await fetch_json('./data/fish_data.json');
 			console.log(this.animation_data);
 			console.log(this.fish_data);
+			//set up acess_handler refs
 			this.access_handler.accesses = {
 				'scene': this.scene_interface,
 				'collsion_map': this.collsion_map
@@ -611,9 +638,11 @@
 			//this.access_handler.register_access('scene', this.scene_interface);
 			//this.access_handler.register_access('collsion_map', this.collsion_map);
 
+			//ready the scene by calling switch scene with a new scene
 			this.switch_scene(new Test_Scene({
 				'canvas':document.getElementById("canvas_fishing_room"),
 				}));
+
 			//console.log("MEWMEW: ", this.scene_interface, this.access_handler)
 			//this.current_scene = new Scene(document.getElementById("canvas_fishing_room"));
 			//this.current_scene.assign_collsion_map(this.collsion_map);
@@ -623,6 +652,7 @@
 			//this.current_scene._counter.subscribe(this.current_scene,(...args) => console.log("mew",...args) );
 			//console.log(this.current_scene.constructor.name, this.current_scene.constructor == Test_Scene ); //a way to get the class ref
 			
+			//create the fishes
 			let bounds = this.current_scene.collsion_map.get_bounds();
 			let fish_list = Object.keys(this.fish_data);
 			for (let i = 0; i < 16; i++) {
@@ -638,15 +668,14 @@
 					//updated without catching the old
 				});
 			}
-			//todo: try to give the scene the ref of the acess handler and such so it
-			//can give it to its objects.
+			//Create the bobber object
 			this.current_scene.bobber = this.spawn_object(Bobber, {
 				position: new Point(bounds.max.x/2, bounds.max.y/2),
 				visibility: false,
 				reel_in_point: new Point(bounds.max.x/2, bounds.max.y)
 			});
+			//listen for fish being caught to update the message box
 			this.current_scene.bobber.fish_caught_signal.subscribe(this,function(fish){
-				//dialog_fishing_room
 				console.log(fish, " was caught. (notify by signal)");
 				if (fish){
 					document.getElementById("dialog_fishing_room").innerHTML = `${fish.fish_data.name} was caught weighing ${fish.weight.toFixed(2)}kg.`;
@@ -661,10 +690,12 @@
 			
 			//this.register_events();
 			//Watcher = new WeakRef(test_object);
+			let update_rate = 0.1; //how many runs per second. 0.1 is 1/10
 			this.main_loop_id = setInterval(() => {
-				this.current_scene.update(0.1);
-				this.current_scene.render(0.1);
-			}, 100);
+				
+				this.current_scene.update(update_rate);
+				this.current_scene.render(update_rate);
+			}, 1000*update_rate);
 		},
 	};
 
