@@ -67,6 +67,7 @@
 
 	class Bobber extends Scene_Object {
 		fish_caught_signal = new Signal();
+		actively_reeling = false;
 		hooked_fish = null;
 		//velocity = new Point(); //TODO: decide if a base class should have this. this is diffrent from direction. 
 		//since it represents movement over time while direction is facing. note: direction might need to be added to the extion of the base class
@@ -80,7 +81,7 @@
 		reel_in_strength = 0.0;
 		//how much each pull(reel-in) will add.
 		base_reel_strength = 1.0;
-		//but it will not exceed the max
+		//but it will not exceed the max. activly reeling may use this(or half) since the reel_in_strength was for rapid clicking
 		max_reel_strength = 10.0;
 		//the amount the bobber will slow down when not being reel in.
 		reel_drag = 1.0; 
@@ -124,6 +125,9 @@
 				return;
 				
 			}
+			if (this.actively_reeling){
+				pull_strengh += this.max_reel_strength;
+			}
 
 			if(this.hooked_fish){
 				counter_pull_direction.set(this.hooked_fish.direction);
@@ -153,7 +157,9 @@
 			//if reel when click is held in, then this logic will be ignored when true. with clicks, this is the decay of reel
 			//strength so it will come to a stop eventually.
 			//using weight to slow it down faster
-			this.reel_in_strength -= Math.max(fish_weight/10.0, this.reel_drag) *delta;
+			if (!this.actively_reeling){
+				this.reel_in_strength -= Math.max(fish_weight/10.0, this.reel_drag) *delta;
+			}
 			//this.pull_strengh = Math.floor(this.pull_strengh);
 			if (this.reel_in_strength < 0.0) {
 				this.reel_in_strength = 0.0;
@@ -334,7 +340,7 @@
 		on_clicked(){
 			console.log("fish is clicked");
 			console.log(this, this.id, this.constructor);
-			this.destroy();
+			//this.destroy();
 			return true;
 			//this.scene_ref.destroy_object(this.id, this.constructor);
 		}
@@ -455,11 +461,13 @@
 			//console.log(type,event)
 			if (type == "on_mousedown" || type == "on_touchstart"){
 				//todo: set the state of the bobber to reeling(by mouse holding)
-				console.log("pressed",type,event);
+				//console.log("pressed",type,event);
+				this.bobber.actively_reeling = true;
 			}
 			if(type == "on_mouseup" || type ==  "on_touchend"){
 				//todo: unset the state of the bobber to reeling(by mouse holding)
-				console.log("released",type,event);
+				//console.log("released",type,event);
+				this.bobber.actively_reeling = false;
 			}
 			if (this[type] && typeof this[type] === "function"){
 				this[type](event)
