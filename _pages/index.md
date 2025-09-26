@@ -12,5 +12,5 @@ I am sorry to disappoint but at this time, this site is primarily used for test 
 
 Random Experiments: 
 
--[Pyscript Fishing Minigame Test](https://mdylantk.github.io/webpage-test): This is a game made with Python that uses pyscript to allow it to work on the web. 
--[JS Fishing Minigame Test](https://mdylantk.github.io/Fishing_Page): This is a remake of the above minigame, but in js. 
+-[Pyscript Fishing Minigame Test](https://mdylantk.github.io/webpage-test.html): This is a game made with Python that uses pyscript to allow it to work on the web. 
+-[JS Fishing Minigame Test](https://mdylantk.github.io/Fishing_Page.html): This is a remake of the above minigame, but in js. 
