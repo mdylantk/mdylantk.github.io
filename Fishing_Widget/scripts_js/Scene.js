@@ -529,6 +529,8 @@ class Scene {
     _object_count = 0;
     scene_objects = new Map();
 
+    collsion_map = null;
+
     //NOTE: The for_each now ignore null cases TODO: remove null cases from callables since it not needed for the for_each
     //This will run the callable on each scene object
     //any function that allow filtering should try to find the class name
@@ -734,12 +736,28 @@ class Canvas_Scene extends Scene{
         }
         return false;
     }
+    //This is to allow overridding the draw image logic
+    //instead of rewriting all of render_scene_object
+    //for effects like distance scaling. that logic
+    //can instead be applied here
+    //if it need to be base on certain scene object, 
+    //then the scene object should handle that
+    //TODO: give scene object overrideable var like
+    //scale
+    draw_image(ctx,image, sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight){
+        ctx.drawImage(image, sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight);
+    }
+    draw_rect(ctx,x,y,width,height,color){
+        ctx.fillStyle = color;
+        ctx.fillRect(x,y, width, height);
+    }
     render_scene_object(scene_object,canvas_context){
         let render_image = scene_object.render();
         if (render_image !== null) {
             if (canvas_context !== null) {
                 if (render_image.type == "image"){
-                    canvas_context.drawImage(
+                    this.draw_image(
+                        canvas_context,
                         render_image.image,
                         render_image.x,
                         render_image.y,
@@ -747,14 +765,20 @@ class Canvas_Scene extends Scene{
                         render_image.height,
                         scene_object.position.x,
                         scene_object.position.y,
-                        render_image.width * scene_object.scale.x, //TODO: times scale
-                        render_image.height * scene_object.scale.y, //TODO: times scale
-                    );
+                        render_image.width * scene_object.scale.x,
+                        render_image.height * scene_object.scale.y,
+                    )
                     return;
                 }
                 if (render_image.type == "rect"){
-                    canvas_context.fillStyle = render_image['color'] || '#000000';
-                    canvas_context.fillRect(scene_object.position.x,scene_object.position.y, render_image.width, render_image.height);
+                    this.draw_rect(
+                        canvas_context,
+                        scene_object.position.x,
+                        scene_object.position.y,
+                        render_image.width,
+                        render_image.height,
+                        render_image['color'] || '#000000'
+                    )
                 }
             }
             else {console.log("canvas_context is null");}
