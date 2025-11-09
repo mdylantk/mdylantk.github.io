@@ -13,3 +13,6 @@ node_modules
 package-lock.json
 *.bat
 *.py
+
+#ignore anything prefix with a period.
+.*

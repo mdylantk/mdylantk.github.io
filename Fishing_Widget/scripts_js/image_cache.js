@@ -83,6 +83,26 @@ class Image_Cache {
     }
 
     /**
+    *	@description Retruns a list of the current stored urls by their ids.
+    *	@return {string[]} -The list of existing url ids.
+    */
+    get_url_ids(){
+        return Object.keys(this.#image_urls)
+    }
+
+    /**
+    *	@description Retruns a cache image if one exists for the provided id.
+    *	@param {string} id - The identifier for the url.
+    *	@return {string} -The image url.
+    */
+    get_image_url(id = 'temp'){
+        if (id in this.#image_urls) {
+            return this.#image_urls[id];
+        }
+        return "";
+    }
+
+    /**
     *	@description Revoke the url held under the provide id.
     *	@param {string} id - An identifier for the url to remove.
     */
