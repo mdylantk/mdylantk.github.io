@@ -115,8 +115,9 @@ class Image_Cache {
     /**
     *	@description Create a image url from the canvas and stores it by the provided id.
     *	this will revoke the url used before if an id is already in use.
+    *   @async
     *	@param {string} id - An identifier for the new url.
-    *	@return {string} -The new image url.
+    *	@return {Promise<string>} -The new image url.
     */
     async create_image_url(id = 'temp') {
         let new_url = await new Promise((resolve, reject) => {

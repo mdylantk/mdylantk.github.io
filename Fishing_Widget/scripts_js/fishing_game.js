@@ -558,6 +558,9 @@ var main = {
 	scene_interface: new Scene_Interface(), //this may or may not be used. it could be useful for providing extra feature to an object.
 	collsion_map: new CollisionMap(), //may keep a fix ref of it and have it overriden on scene switch like originally planed... unless keeping the scene interface than may use that
 	access_handler: new Access_Handler(),
+	pause_state:0,//bitflag: 0 = none, 1 = update, 2 = rendering. 3 = both 
+	last_update_time:Date.now(),
+	last_render_time:Date.now(),
 	//both the game and scene should have a spawn/create object function
 	//game version is responsible for assigning any nessary globals
 	//and scene for keeping track of it
@@ -602,11 +605,6 @@ var main = {
 				}
 			});
 		});
-		//document.removeEventListener("click", function(){
-		//	if (self.current_scene){
-		//		self.current_scene.handle_event("on_click",event);
-		//	}
-		//});
 	},
 	switch_scene(scene) {
 		this.unregister_events();
@@ -615,6 +613,38 @@ var main = {
 		this.current_scene.assign_collsion_map(this.collsion_map);//this.collsion_map); //this may be removed later when scene take full responsibility of it
 		this.register_events();
 		this.scene_interface.scene = scene;
+	},
+	pause(update=true,rendering=true){
+		if (update){
+			this.pause_state |= 1 << 0;
+		}
+		else{
+			this.pause_state &= ~(1 << 0);
+		}
+		if (rendering){
+			this.pause_state |= 1 << 1;
+		}
+		else{
+			this.pause_state &= ~(1 << 1);
+		}
+	},
+	run_update() {
+		let timestamp = Date.now();
+		let delta =  (timestamp - this.last_update_time)/ 1000;
+		this.last_update_time = timestamp;
+		if (this.pause_state & 1 << 0) {
+			return;
+		}
+		this.current_scene.update(delta);
+	},
+	run_render_frame() {
+		let timestamp = Date.now();
+		let delta = (timestamp - this.last_render_time)/ 1000;
+		this.last_render_time = timestamp;
+		if (this.pause_state & 1 << 1){
+			return
+		}
+		this.current_scene.render(delta);
 	},
 	async setup() {
 		//this.animation_data = await fetch_json('https://mdylantk.github.io/Fishing_Widget/data/animation_data.json');
@@ -667,10 +697,8 @@ var main = {
 		})
 
 		let update_rate = 0.1; //how many runs per second. 0.1 is 1/10
-		this.main_loop_id = setInterval(() => {
 
-			this.current_scene.update(update_rate);
-			this.current_scene.render(update_rate);
-		}, 1000 * update_rate);
+		this.main_loop_id = setInterval(()=>{this.run_update()},update_rate*1000);
+		this.render_loop_id = setInterval(()=>{this.run_render_frame()},update_rate*1000);
 	},
 };
