@@ -324,6 +324,11 @@ class Viewport {
     get_position(){
         return new Point()
     }
+    //the viewport may change the render size of objects such as objects
+    //whos depth is far away.
+    get_scaling(){
+        return new Point(1.0,1.0);
+    }
     is_in_viewport(point = new Point(), local = false){
         let position = (local) ? new Point()  : this.get_position();
         return (

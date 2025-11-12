@@ -61,13 +61,23 @@ class Bobber extends Scene_Object {
 
 	//this is to prevent accidental casting after reeling in
 	cast_cooldown = 0.0;
-
+	//not sure if this should be a property or a methood. as a methood it can return
+	//either the base size or the scaled size
+	get_size(scaled = true){
+		const height = 8.0;
+		const width = 8.0;
+		if (scaled){
+			return new Point(height*this.scale.x,width*this.scale.y);
+		}
+		return new Point(8.0,8.0);
+	};
 	render(delta = 1.0) {
+		let size = this.get_size(false);
 		return {
 			type: "rect",
 			color: '#8d0101ff',
-			width: 8,
-			height: 8
+			width: size.x,
+			height: size.y
 		}
 	};
 	//may need a signal for the fish to react to if the fish ever need to notify for release
@@ -83,7 +93,7 @@ class Bobber extends Scene_Object {
 		if (caught) {
 			this.fish_caught_signal.emit(released_fish)
 		}
-		else{
+		else {
 			this.line_reeled_in_signal.emit();
 		}
 		return released_fish;
@@ -95,11 +105,11 @@ class Bobber extends Scene_Object {
 	}
 	update(delta = 1.0) {
 		super.update(delta);
-		if (this.cast_cooldown > 0.0 ){
+		if (this.cast_cooldown > 0.0) {
 			this.cast_cooldown -= delta
 		}
-		if (!this.visibility) { 
-			return 
+		if (!this.visibility) {
+			return
 		}
 		//TODO: add a line length that is set base on the bobber distance from the reel_in_point when first reeling out
 		//and each time the reeler reel in. 
@@ -177,13 +187,31 @@ class Bobber extends Scene_Object {
 				else {
 					//should add sockets and get the relitive position base off of that
 					//so the fish mouth is at the bobber position. could also just use to to render where the line draws to when that get added
-					this.hooked_fish.position.set(this.position);
+					//this.hooked_fish.position.set(this.position);
+					//will try to offset it . need to mirror it if changing direction
+					//and try to center it. both needs the fish image size(scaled)
+					//NOTE: NEED WORLD SCALING else they wont be aline correctly
+					//so sockets may be better. but this will be fine untill then
+					//may be good to have a way to convert to viewport size just to have it
+					//also need to get its size to help ajust the fish position
+					let ratio = this.collsion_map.get_depth(this.position);
+					//should have a way to offset the image render or well sockets be better
+					//ratio do not take in account of the fish new position since new position depends on rendering sizes.
+					let bobber_size = this.get_size();
+					let fish_size = this.hooked_fish.get_size();
+					if (this.hooked_fish.direction.x > 0){
+						this.hooked_fish.position.x = this.position.x - fish_size.x*ratio +(bobber_size.x*ratio);// * 0.5;
+					}
+					else{
+						this.hooked_fish.position.x = this.position.x;
+					}
+					this.hooked_fish.position.y = this.position.y - (fish_size.y*ratio* 0.5)+(bobber_size.y*ratio);
 				}
 			}
 		}
 	}
 	cast(position = new Point()) {
-		if (this.cast_cooldown > 0.0){
+		if (this.cast_cooldown > 0.0) {
 			return;
 		}
 		this.position.set(position);
@@ -225,6 +253,12 @@ class Bobber extends Scene_Object {
 	constructor(options = {}) {
 		super(options);
 		this.reel_in_point = options['reel_in_point'] || new Point();
+		if (options['access_handler']) {
+			let scene = options['access_handler'].get_access('scene')
+			if (scene) {
+				this.collsion_map = scene.get_collsion_map();
+			}
+		}
 	}
 }
 
@@ -240,6 +274,13 @@ class Fish extends Scene_Object {
 	is_fighting = false;
 	stamina = 100.0;
 
+	//size may be hard to caculate outside the fish, so the fish may provide a way to get the size
+	get_size(scaled = true){
+		if (scaled){
+			return new Point(this.animation_data["tile_x"]*this.scale.x,this.animation_data["tile_y"]*this.scale.y);
+		}
+		return new Point(this.animation_data["tile_x"],this.animation_data["tile_y"]);
+	}
 	is_hooked() {
 		//a check incase additional hjooked states are added
 		//or if hooked gets handled as a flag instead
@@ -329,7 +370,7 @@ class Fish extends Scene_Object {
 		console.log("fish is clicked");
 		console.log(this, this.id, this.constructor);
 		//this.destroy();
-		return true;
+		return false; //currenly do not want to comsume the click.
 		//this.scene_ref.destroy_object(this.id, this.constructor);
 	}
 	render(delta = 1.0) {
@@ -412,6 +453,29 @@ class Fish extends Scene_Object {
 		}
 
 	}
+	new_fish(fish_data){
+		const normal_weight = 0.5;
+		let weight_scaling = 1.0;
+		this.fish_data = fish_data; //note may handle this as an id
+		//and have a data access pass to fetch it from
+		this.random = Math.random();//this is to get a value from 0-1 used to caculate aspects of the fish
+		this.weight = this.random * ((this.fish_data.max_weight || 1.0) - (this.fish_data.min_weight || 1.0)) + (this.fish_data.min_weight || 1.0);
+		//a test for scaling base on size. this uses existing scale, but may set it base on fish data. also storing random may not be needed
+		//it currently is used as a quick way to get the orignal 0-1 value used for the weight.
+		if (this.weight > normal_weight){
+			weight_scaling = (this.weight-normal_weight)/100.0 + 1.0;
+		}
+		else{
+			weight_scaling = this.weight/normal_weight;
+		}
+		this.scale.x = weight_scaling;
+		if (weight_scaling > 2.0){
+			this.scale.y = weight_scaling*0.5;
+		}
+		else{
+			this.scale.y = weight_scaling;
+		}
+	}
 	constructor(options = {}) {
 		super(options);
 		this.direction = options['direction'] || new Point();
@@ -419,9 +483,9 @@ class Fish extends Scene_Object {
 		this.animation = options['animation'] || "swim_right";
 		this.animation_speed = options['animation_speed'] || 4.0;
 		//this.collsion_map = options['collsion_map'] || null;
-		this.fish_data = options['fish_data'] || {}; //note may handle this as an id
-		//and have a data access pass to fetch it from
-		this.weight = Math.random() * ((this.fish_data.max_weight || 1.0) - (this.fish_data.min_weight || 1.0)) + (this.fish_data.min_weight || 1.0);
+
+		this.new_fish(options['fish_data'] || {});
+		
 
 		if (options['access_handler']) {
 			let scene = options['access_handler'].get_access('scene')
@@ -540,6 +604,12 @@ class Test_Scene extends Canvas_Scene {
 				},
 			}
 		}
+		//temp solution for visual depth. should be viewport base reflecting on collsion
+		//but here due to both objects needing it having acess to the map
+		//just need it in one spot for now untill a better system is designed
+		collsion_map.get_depth = (position = new Point()) => {
+			return position.y / collsion_map.get_bounds().max.y;
+		}
 	}
 	create_scene_object(scene_class, options = {}) {
 		if (this.access_handler) {
@@ -552,15 +622,15 @@ class Test_Scene extends Canvas_Scene {
 	//(at the time of writing this) this system uses a fix depth base on the background perspective
 	//and ratio is a quick hack. hight should be base on the playfeild height
 	//a lerp may be useful if it is not a 0-1 case
-	draw_image(ctx,image, sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight){
-		let ratio = dy / this.collsion_map.get_bounds().max.y
-        ctx.drawImage(image, sx, sy, sWidth, sHeight, dx, dy, dWidth*ratio, dHeight*ratio);
-    }
-	draw_rect(ctx,x,y,width,height,color){
-		let ratio = y / this.collsion_map.get_bounds().max.y
-        ctx.fillStyle = color;
-        ctx.fillRect(x,y, width*ratio, height*ratio);
-    }
+	draw_image(ctx, image, sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight) {
+		let ratio = this.collsion_map.get_depth(new Point(dx,dy));
+		ctx.drawImage(image, sx, sy, sWidth, sHeight, dx, dy, dWidth * ratio, dHeight * ratio);
+	}
+	draw_rect(ctx, x, y, width, height, color) {
+		let ratio = this.collsion_map.get_depth(new Point(x,y));
+		ctx.fillStyle = color;
+		ctx.fillRect(x, y, width * ratio, height * ratio);
+	}
 }
 
 async function fetch_json(url) {
@@ -580,9 +650,10 @@ var main = {
 	scene_interface: new Scene_Interface(), //this may or may not be used. it could be useful for providing extra feature to an object.
 	collsion_map: new CollisionMap(), //may keep a fix ref of it and have it overriden on scene switch like originally planed... unless keeping the scene interface than may use that
 	access_handler: new Access_Handler(),
-	pause_state:0,//bitflag: 0 = none, 1 = update, 2 = rendering. 3 = both 
-	last_update_time:Date.now(),
-	last_render_time:Date.now(),
+	pause_state: 0,//bitflag: 0 = none, 1 = update, 2 = rendering. 3 = both,(0:update,1:rendering,2:unfocus) 
+	last_update_time: Date.now(),
+	last_render_time: Date.now(),
+	player_data:{},//placeholder object for storing fish catched
 	//both the game and scene should have a spawn/create object function
 	//game version is responsible for assigning any nessary globals
 	//and scene for keeping track of it
@@ -621,43 +692,51 @@ var main = {
 		this.register_events();
 		this.scene_interface.scene = scene;
 	},
-	pause(update=true,rendering=true){
-		if (update){
+	get_random_fish_data(){
+		let fish_list = Object.keys(this.fish_data);
+		let fish_id = fish_list[Math.floor(Math.random() * fish_list.length)];
+		return this.fish_data[fish_id];
+	},
+	//this will only handle the standard cases. there may be other states
+	pause(update = true, rendering = true) {
+		if (update) {
 			this.pause_state |= 1 << 0;
 		}
-		else{
+		else {
 			this.pause_state &= ~(1 << 0);
 		}
-		if (rendering){
+		if (rendering) {
 			this.pause_state |= 1 << 1;
 		}
-		else{
+		else {
 			this.pause_state &= ~(1 << 1);
 		}
 	},
 	run_update() {
 		let timestamp = Date.now();
-		let delta =  (timestamp - this.last_update_time)/ 1000;
+		let delta = (timestamp - this.last_update_time) / 1000;
 		this.last_update_time = timestamp;
-		if (this.pause_state & 1 << 0) {
+		if (this.pause_state & 1 << 0 || this.pause_state & 1 << 2) {
 			return;
 		}
 		this.current_scene.update(delta);
 	},
 	run_render_frame() {
 		let timestamp = Date.now();
-		let delta = (timestamp - this.last_render_time)/ 1000;
+		let delta = (timestamp - this.last_render_time) / 1000;
 		this.last_render_time = timestamp;
-		if (this.pause_state & 1 << 1){
+		if (this.pause_state & 1 << 1 || this.pause_state & 1 << 2) {
 			return
 		}
 		this.current_scene.render(delta);
 	},
 	async setup() {
+		let game = this; //a ref to this for the use in callables created here
 		this.animation_data = await fetch_json('./data/animation_data.json');
 		this.fish_data = await fetch_json('./data/fish_data.json');
 		console.log(this.animation_data);
 		console.log(this.fish_data);
+		this.player_data={'catches':{}}; //can load it here as well
 		//set up acess_handler refs
 		//scene currently have limited acess since most stuff
 		//should be acess by other objects/componets
@@ -679,12 +758,12 @@ var main = {
 		let fish_list = Object.keys(this.fish_data);
 		for (let i = 0; i < 16; i++) {
 			let random_point = new Point(Math.max(Math.random() * bounds.max.x, bounds.min.x), Math.max(Math.random() * bounds.max.y, bounds.min.y))
-			let fish_id = fish_list[Math.floor(Math.random() * fish_list.length)];
+			//let fish_id = fish_list[Math.floor(Math.random() * fish_list.length)];
 			this.spawn_object(Fish, {
 				position: random_point,
 				image_source: document.getElementById("fish_image"),
 				animation_data: this.animation_data.fish,
-				fish_data: this.fish_data[fish_id] //need to decide on the name. fish data is what it is for that single fish, but may be misleading
+				fish_data: this.get_random_fish_data(), //need to decide on the name. fish data is what it is for that single fish, but may be misleading
 				//also could have it inject the data into itself, but that will make changes harder
 				//on that note, just providing the id and a acess to the fish data would be more ideal so the static data could be
 				//updated without catching the old
@@ -702,9 +781,48 @@ var main = {
 		});
 		this.current_scene.bobber.fish_caught_signal.subscribe(this, function (fish) {
 			if (fish) {
-				document.getElementById("dialog_fishing_room").innerHTML = `${fish.fish_data.name} was caught weighing ${fish.weight.toFixed(2)}kg.`;
+				let fish_id = fish.fish_data.name;
+				if (fish_id in game.player_data.catches){
+					game.player_data.catches[fish_id].amount += 1;
+					game.player_data.catches[fish_id].total_weight += fish.weight;
+					if(fish.weight < game.player_data.catches[fish_id].min_weight){
+						game.player_data.catches[fish_id].min_weight = fish.weight;
+					}
+					if(fish.weight > game.player_data.catches[fish_id].max_weight){
+						game.player_data.catches[fish_id].max_weight = fish.weight;
+					} 
+				}
+				else{
+					game.player_data.catches[fish_id] = {};
+					game.player_data.catches[fish_id].amount = 1;
+					game.player_data.catches[fish_id].total_weight = fish.weight;
+					game.player_data.catches[fish_id].min_weight = fish.weight;
+					game.player_data.catches[fish_id].max_weight = fish.weight;
+				}
+				
+				document.getElementById("dialog_fishing_room").innerHTML = (
+					`${fish.fish_data.name} was caught weighing ${fish.weight.toFixed(2)}kg. <br>
+					Caught ${game.player_data.catches[fish_id].amount} totaling ${game.player_data.catches[fish_id].total_weight.toFixed(2)}kg. <br>
+					Smallest catch: ${game.player_data.catches[fish_id].min_weight.toFixed(4)}kg. <br>
+					Largest catch: ${game.player_data.catches[fish_id].max_weight.toFixed(4)}kg.`
+				);
+				//forcing the fish to change here.NOTE: This will cause issues if not delay an update
+				//it may be better or just removing and recreating it
+				fish.visibility = false;
+				setTimeout(function(){
+					fish.new_fish(game.get_random_fish_data());
+					if (Math.random() > 0.5){
+						fish.position.x = bounds.max.x + fish.get_size().x
+					}
+					else{
+						fish.position.x = bounds.min.x - fish.get_size().x
+					}
+					fish.position.y = Math.max(Math.random() * bounds.max.y, bounds.min.y);
+					fish.visibility = true;
+				}, 5000)
+				
 			}
-			else{
+			else {
 				document.getElementById("dialog_fishing_room").innerHTML = `No fish was caught.`;
 			}
 		});
@@ -719,9 +837,20 @@ var main = {
 
 		//may change this to be times per second and have value for each update and rendering
 		//but will caculate the milliaseconds here to keep it simple for now.
-		let update_rate = (1.0/30)*1000.0; //(1/time-per-second)*1000(to convert to milliseconds))
+		let update_rate = (1.0 / 30) * 1000.0; //(1/time-per-second)*1000(to convert to milliseconds))
 
-		this.main_loop_id = setInterval(()=>{this.run_update()},update_rate);
-		this.render_loop_id = setInterval(()=>{this.run_render_frame()},update_rate);
+		this.main_loop_id = setInterval(() => { this.run_update() }, update_rate);
+		this.render_loop_id = setInterval(() => { this.run_render_frame() }, update_rate);
+
+		// When the window loses focus
+		window.addEventListener('blur', () => {
+			this.pause_state |= 1 << 2;
+		});
+
+		// When the window gains focus
+		window.addEventListener('focus', () => {
+			this.pause_state &= ~(1 << 2);
+		});
+
 	},
 };
