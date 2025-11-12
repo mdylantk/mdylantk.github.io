@@ -444,7 +444,7 @@ class Scene_Object {
         //this.notify_signal.emit(this,"destroy");
     }
 
-    render(){
+    render(delta = 1.0){
         return {
             type:"image",
             image:this.image_source,
@@ -693,7 +693,7 @@ class Scene {
             return objects;
         }
     }
-    render() {
+    render(delta = 1.0) {
         //rending logic goses here
         //base scene lack content to draw on
     }
@@ -751,8 +751,8 @@ class Canvas_Scene extends Scene{
         ctx.fillStyle = color;
         ctx.fillRect(x,y, width, height);
     }
-    render_scene_object(scene_object,canvas_context){
-        let render_image = scene_object.render();
+    render_scene_object(scene_object,canvas_context,delta = 1.0){
+        let render_image = scene_object.render(delta);
         if (render_image !== null) {
             if (canvas_context !== null) {
                 if (render_image.type == "image"){
@@ -788,7 +788,7 @@ class Canvas_Scene extends Scene{
         }
     }
 
-    render() {
+    render(delta = 1.0) {
         let canvas_context = null;
         if (this.viewport == null) {
             //Cant render if there no viewport to define where
@@ -806,7 +806,7 @@ class Canvas_Scene extends Scene{
         this.for_each_scene_object((scene_object) => {
             if (scene_object){
                 if (this.can_render_scene_object(scene_object,canvas_context)){
-                    this.render_scene_object(scene_object,canvas_context);
+                    this.render_scene_object(scene_object,canvas_context,delta);
                 }
             }
         });

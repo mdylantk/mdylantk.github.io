@@ -34,6 +34,9 @@ class Access_Handler {
 }
 
 class Bobber extends Scene_Object {
+	line_casted_signal = new Signal();
+	line_reeled_in_signal = new Signal();
+	fish_hooked_signal = new Signal();
 	fish_caught_signal = new Signal();
 	actively_reeling = false;
 	hooked_fish = null;
@@ -56,7 +59,10 @@ class Bobber extends Scene_Object {
 
 	line_length = 0.0;
 
-	render() {
+	//this is to prevent accidental casting after reeling in
+	cast_cooldown = 0.0;
+
+	render(delta = 1.0) {
 		return {
 			type: "rect",
 			color: '#8d0101ff',
@@ -64,6 +70,24 @@ class Bobber extends Scene_Object {
 			height: 8
 		}
 	};
+	//may need a signal for the fish to react to if the fish ever need to notify for release
+	release(caught = false) {
+		let released_fish = this.hooked_fish;
+		if (released_fish) {
+			released_fish.ai_state = Fish.AI_STATE.IDLE;
+		}
+		this.hooked_fish = null;
+		//this.velocity.zero();
+		this.reel_in_strength = 0.0;
+		this.cast_cooldown = 0.5;
+		if (caught) {
+			this.fish_caught_signal.emit(released_fish)
+		}
+		else{
+			this.line_reeled_in_signal.emit();
+		}
+		return released_fish;
+	}
 	//update the line length base on the distance of the bobber and reeler.
 	//could add a loosen feature that acts as extra line untill it is used up(but would not move closer to the reeler untill used up)
 	update_line_length() {
@@ -71,7 +95,12 @@ class Bobber extends Scene_Object {
 	}
 	update(delta = 1.0) {
 		super.update(delta);
-		if (!this.visibility) { return }
+		if (this.cast_cooldown > 0.0 ){
+			this.cast_cooldown -= delta
+		}
+		if (!this.visibility) { 
+			return 
+		}
 		//TODO: add a line length that is set base on the bobber distance from the reel_in_point when first reeling out
 		//and each time the reeler reel in. 
 		//This value will be used to reduce the distance the fish can moved when hooked if their direction is
@@ -154,9 +183,13 @@ class Bobber extends Scene_Object {
 		}
 	}
 	cast(position = new Point()) {
+		if (this.cast_cooldown > 0.0){
+			return;
+		}
 		this.position.set(position);
 		this.visibility = true;
 		this.update_line_length();
+		this.line_casted_signal.emit();
 	}
 	reel(reel_in = false, pull_direction = new Point()) {
 		//todo: decide on who is the handler. fish may not need to know about the bobber
@@ -180,23 +213,10 @@ class Bobber extends Scene_Object {
 	bite(fish = null) {
 		if (fish && !this.hooked_fish) {
 			this.hooked_fish = fish;
+			this.fish_hooked_signal.emit(fish);
 			return true;
 		}
 		return false
-	}
-	//may need a signal for the fish to react to if the fish ever need to notify for release
-	release(caught = false) {
-		let released_fish = this.hooked_fish;
-		if (released_fish) {
-			released_fish.ai_state = Fish.AI_STATE.IDLE;
-		}
-		this.hooked_fish = null;
-		//this.velocity.zero();
-		this.reel_in_strength = 0.0;
-		if (caught) {
-			this.fish_caught_signal.emit(released_fish)
-		}
-		return released_fish;
 	}
 	on_clicked() {
 		//May have this reel itself in when clicked so it and be cast again
@@ -312,9 +332,10 @@ class Fish extends Scene_Object {
 		return true;
 		//this.scene_ref.destroy_object(this.id, this.constructor);
 	}
-	render() {
-		let frames_data = this.animation_data[this.animation].frames
-		this.animation_frame += this.animation_speed;
+	render(delta = 1.0) {
+		let animation_data = this.animation_data[this.animation];
+		let frames_data = animation_data.frames;
+		this.animation_frame += this.animation_speed * delta;
 
 		if (this.animation_frame > frames_data.length - 1.0 || this.animation_frame < 0) {
 			if (this.animation_speed >= 0) {
@@ -396,7 +417,7 @@ class Fish extends Scene_Object {
 		this.direction = options['direction'] || new Point();
 		this.animation_data = options['animation_data'] || {};
 		this.animation = options['animation'] || "swim_right";
-		this.animation_speed = options['animation_speed'] || 0.4;
+		this.animation_speed = options['animation_speed'] || 4.0;
 		//this.collsion_map = options['collsion_map'] || null;
 		this.fish_data = options['fish_data'] || {}; //note may handle this as an id
 		//and have a data access pass to fetch it from
@@ -552,6 +573,7 @@ async function fetch_json(url) {
 //this handles the main logic. it n an object due to needing to await content
 //it could be converted to a class, but this should be good enough
 var main = {
+	event_list: ["click", "mousedown", "touchstart", "mouseup", "touchend", "mousemove", "touchmove"],
 	animation_data: {},
 	fish_data: {},
 	current_scene: null,
@@ -565,40 +587,25 @@ var main = {
 	//game version is responsible for assigning any nessary globals
 	//and scene for keeping track of it
 	spawn_object(object_class, options = {}) {
-		//can inject data into options as needed, but this means some data cant be override this way(unless skipping this and acessing scene directly)
-		//options["collsion_map"] = this.collsion_map;
-		//options["access_handler"] = this.access_handler;
-		const new_object = this.current_scene.create_scene_object(object_class, options);
-		//new_object.collsion_map = this.collsion_map;
+		let new_object = this.current_scene.create_scene_object(object_class, options);
 		return new_object
 	},
 	register_events() {
-		//This connects the doc and scene events
-		//will ref self. this allow any reg events to be used as long as the current scene is vaild
-		const event_list = ["click", "mousedown", "touchstart", "mouseup", "touchend", "mousemove", "touchmove"];
 		let self = this;
-		event_list.forEach((event_id) => {
+		this.event_list.forEach((event_id) => {
 			document.addEventListener(event_id, function () {
 				if (self.current_scene) {
 					self.current_scene.handle_event("on_" + event_id, event);
 				}
 			});
 		});
-		//document.addEventListener("click", function(){
-		//	if (self.current_scene){
-		//		self.current_scene.handle_event("on_click",event);
-		//	}
-		//});
 	},
 	unregister_events() {
-		//This need to do the same as register_events, but instead remove the event
-		//this is importaint if changing scenes. if not handled, might cause memory leak
-		const event_list = ["click", "mousedown", "touchstart", "mouseup", "touchend", "mousemove", "touchmove"];
 		let self = this;
 		if (self.current_scene == null) {
 			return
 		}
-		event_list.forEach((event_id) => {
+		this.event_list.forEach((event_id) => {
 			document.removeEventListener(event_id, function () {
 				if (self.current_scene) {
 					self.current_scene.handle_event("on_" + event_id, event);
@@ -647,13 +654,14 @@ var main = {
 		this.current_scene.render(delta);
 	},
 	async setup() {
-		//this.animation_data = await fetch_json('https://mdylantk.github.io/Fishing_Widget/data/animation_data.json');
-		//load data
 		this.animation_data = await fetch_json('./data/animation_data.json');
 		this.fish_data = await fetch_json('./data/fish_data.json');
 		console.log(this.animation_data);
 		console.log(this.fish_data);
 		//set up acess_handler refs
+		//scene currently have limited acess since most stuff
+		//should be acess by other objects/componets
+		//while scene interface is for spawning or removing objects owned by scene
 		this.access_handler.accesses = {
 			'scene': this.scene_interface,
 			'collsion_map': this.collsion_map
@@ -688,17 +696,32 @@ var main = {
 			visibility: false,
 			reel_in_point: new Point(bounds.max.x / 2, bounds.max.y)
 		});
-		//listen for fish being caught to update the message box
+		//listen for bobber signals to update the message box
+		this.current_scene.bobber.fish_hooked_signal.subscribe(this, function (fish) {
+			document.getElementById("dialog_fishing_room").innerHTML = `Hooked something.`;
+		});
 		this.current_scene.bobber.fish_caught_signal.subscribe(this, function (fish) {
-			//console.log(fish, " was caught. (notify by signal)");
 			if (fish) {
 				document.getElementById("dialog_fishing_room").innerHTML = `${fish.fish_data.name} was caught weighing ${fish.weight.toFixed(2)}kg.`;
 			}
-		})
+			else{
+				document.getElementById("dialog_fishing_room").innerHTML = `No fish was caught.`;
+			}
+		});
 
-		let update_rate = 0.1; //how many runs per second. 0.1 is 1/10
+		this.current_scene.bobber.line_casted_signal.subscribe(this, function () {
+			document.getElementById("dialog_fishing_room").innerHTML = `Line casted.`;
+		});
 
-		this.main_loop_id = setInterval(()=>{this.run_update()},update_rate*1000);
-		this.render_loop_id = setInterval(()=>{this.run_render_frame()},update_rate*1000);
+		this.current_scene.bobber.line_reeled_in_signal.subscribe(this, function () {
+			document.getElementById("dialog_fishing_room").innerHTML = `Line reeled in.`;
+		});
+
+		//may change this to be times per second and have value for each update and rendering
+		//but will caculate the milliaseconds here to keep it simple for now.
+		let update_rate = (1.0/30)*1000.0; //(1/time-per-second)*1000(to convert to milliseconds))
+
+		this.main_loop_id = setInterval(()=>{this.run_update()},update_rate);
+		this.render_loop_id = setInterval(()=>{this.run_render_frame()},update_rate);
 	},
 };
