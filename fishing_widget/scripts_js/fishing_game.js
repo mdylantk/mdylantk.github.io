@@ -775,6 +775,15 @@ export var main = {
 		}
 		this.current_scene.render(delta);
 	},
+	play_sound(id,volume=1.0){
+		let sound = document.getElementById(id);
+		if (sound){
+			sound.volume = volume;
+			sound.play();
+			return true;
+		}
+		return false;
+	},
 	async setup() {
 		let game = this; //a ref to this for the use in callables created here
 		this.animation_data = await fetch_json('./data/animation_data.json');
@@ -824,6 +833,7 @@ export var main = {
 		//listen for bobber signals to update the message box
 		this.current_scene.bobber.fish_hooked_signal.subscribe(this, function (fish) {
 			document.getElementById("dialog_fishing_room").innerHTML = `Hooked something.`;
+			game.play_sound("quick_splash_sound");
 		});
 		this.current_scene.bobber.fish_caught_signal.subscribe(this, function (fish) {
 			if (fish) {
@@ -870,18 +880,22 @@ export var main = {
 				//breaking it up base on importaint and not may be needed
 				//and update as nessary
 				game.save_player_data();
+				game.play_sound("splash_sound");
 			}
 			else {
 				document.getElementById("dialog_fishing_room").innerHTML = `No fish was caught.`;
+				game.play_sound("quick_splash_sound",0.5);
 			}
 		});
 
 		this.current_scene.bobber.line_casted_signal.subscribe(this, function () {
 			document.getElementById("dialog_fishing_room").innerHTML = `Line casted.`;
+			game.play_sound("quick_splash_sound",0.5);
 		});
 
 		this.current_scene.bobber.line_reeled_in_signal.subscribe(this, function () {
 			document.getElementById("dialog_fishing_room").innerHTML = `Line reeled in.`;
+			game.play_sound("quick_splash_sound",0.5);
 		});
 
 		//may change this to be times per second and have value for each update and rendering
