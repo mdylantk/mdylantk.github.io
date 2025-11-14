@@ -11,7 +11,7 @@
  *  @description A class to declare an object that represent an enum like type.
  *  @class
  */
-class Enumeration {
+export class Enumeration {
     #members = [];
     /**
      * @description create an enumeration object
@@ -43,7 +43,7 @@ class Enumeration {
  *   @class
 */
 //TODO: see if extending can override static varibles and if not, handle default_axes differently
-class Point{
+export class Point{
     static default_axes = 2;
     get x(){
         return this.axes[0] || 0.0;
@@ -263,7 +263,7 @@ class Point{
  *   @description Allows a way to notify change to subscribed objects
  *   @class
 */
-class Signal {
+export class Signal {
     subscribers = new Map();
     emit(...args){
         this.subscribers.forEach((subscriber) => subscriber(...args));
@@ -283,7 +283,7 @@ class Signal {
  *   @description Handles fetching info about existing collsion of a scene or space
  *   @class
 */
-class CollisionMap{
+export class CollisionMap{
     is_in_bounds(value){
         return true
     }
@@ -311,7 +311,7 @@ class CollisionMap{
  *   @description A generic viewport for declaring what is visable in a space
  *   @class
 */
-class Viewport {   
+export class Viewport {   
     get_height(){
         return 0.0
     }
@@ -351,7 +351,7 @@ class Viewport {
  *   @description A viewport for declaring what is visable in a JS canvas
  *   @class
 */
-class Canvas_Viewport extends Viewport {
+export class Canvas_Viewport extends Viewport {
     get_height(){
         if (this.canvas){
             return this.canvas.getBoundingClientRect().height
@@ -384,7 +384,7 @@ class Canvas_Viewport extends Viewport {
  *   @description Base object a scene will keep track of.
  *   @class
 */
-class Scene_Object {
+export class Scene_Object {
     //NOTE: signals first binding is the owner of the signal
     //this allow an object that listens to multiobjects know who trigger it
     visibility_signal = new Signal(); //notify when object visibilty is change. 
@@ -490,7 +490,7 @@ class Scene_Object {
  *  NOTE: Still deciding if this should be in this name space or move to the implementation.
  *   @class
 */
-class Scene_Interface {
+export class Scene_Interface {
     #scene = null;
     set scene(value){
         this.#scene = value;
@@ -529,7 +529,7 @@ class Scene_Interface {
  *   @description Handles a virtual space
  *   @class
 */
-class Scene {
+export class Scene {
     _on_clearing = new Signal();
     _object_count = 0;
     scene_objects = new Map();
@@ -728,7 +728,7 @@ class Scene {
  *   @description Handles a virtual space base on a JS Canvas
  *   @class
 */
-class Canvas_Scene extends Scene{
+export class Canvas_Scene extends Scene{
 
     can_render_scene_object(scene_object){
         //Note: could copy the point, but should try to keep most these
@@ -829,3 +829,4 @@ class Canvas_Scene extends Scene{
         }
     }
 }
+

@@ -156,7 +156,7 @@ include:
   - _pages
   - files
   - _webpages
-  - Fishing_Widget
+  - fishing_widget
 exclude:
   - "*.sublime-project"
   - "*.sublime-workspace"

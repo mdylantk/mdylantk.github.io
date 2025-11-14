@@ -3,6 +3,8 @@
 //may try to move those id to a more editable spot 
 //or move the main object declaration back to the html page
 
+import {Enumeration,Signal,Point,Viewport,CollisionMap,Scene_Object,Scene_Interface,Canvas_Scene} from "./scene.js";
+
 class Access_Handler {
 	//This allow object to connect to system it used without
 	//having the scene or main decided which it gets
@@ -642,7 +644,7 @@ async function fetch_json(url) {
 
 //this handles the main logic. it n an object due to needing to await content
 //it could be converted to a class, but this should be good enough
-var main = {
+export var main = {
 	event_list: ["click", "mousedown", "touchstart", "mouseup", "touchend", "mousemove", "touchmove"],
 	animation_data: {},
 	fish_data: {},
@@ -654,9 +656,52 @@ var main = {
 	last_update_time: Date.now(),
 	last_render_time: Date.now(),
 	player_data:{},//placeholder object for storing fish catched
+	is_saved_locally: false,
 	//both the game and scene should have a spawn/create object function
 	//game version is responsible for assigning any nessary globals
 	//and scene for keeping track of it
+	load_player_data() {
+		let loaded_data;
+		this.is_saved_locally = localStorage.getItem('save_locally');
+		if (this.is_saved_locally == null){
+			this.is_saved_locally = confirm("Do you want to save fish catches?");
+			//this is only need to run here. This is to prevent populating the local storage if not used
+			if (this.is_saved_locally){
+				localStorage.setItem('save_locally',true);
+			}
+		}
+		if (this.is_saved_locally){
+			loaded_data = localStorage.getItem('player_data')
+		}
+		else{
+			loaded_data = sessionStorage.getItem('player_data');
+		}
+		if (loaded_data){
+			try {
+				this.player_data = JSON.parse(loaded_data);
+				return;
+			}
+			catch (e) { 
+				console.error("Invalid JSON string", e); 
+			}
+		}
+		this.player_data = {
+			'catches':{},
+			'version':0.01
+		};
+	},
+	save_player_data() {
+		//instead of saving each element if player data, we will
+		//save it as a namespace(object) unless it becomes an issue
+		//also using session for now, since data may change. might add
+		//a option to pick if needed.
+		if (this.is_saved_locally) {
+			localStorage.setItem('player_data',JSON.stringify(this.player_data));
+		}
+		else{
+			sessionStorage.setItem('player_data',JSON.stringify(this.player_data));
+		}
+	},
 	spawn_object(object_class, options = {}) {
 		let new_object = this.current_scene.create_scene_object(object_class, options);
 		return new_object
@@ -736,7 +781,8 @@ var main = {
 		this.fish_data = await fetch_json('./data/fish_data.json');
 		console.log(this.animation_data);
 		console.log(this.fish_data);
-		this.player_data={'catches':{}}; //can load it here as well
+		this.load_player_data();
+		//this.player_data={'catches':{}}; //can load it here as well
 		//set up acess_handler refs
 		//scene currently have limited acess since most stuff
 		//should be acess by other objects/componets
@@ -820,7 +866,10 @@ var main = {
 					fish.position.y = Math.max(Math.random() * bounds.max.y, bounds.min.y);
 					fish.visibility = true;
 				}, 5000)
-				
+				//how often to save the state depends on the state use
+				//breaking it up base on importaint and not may be needed
+				//and update as nessary
+				game.save_player_data();
 			}
 			else {
 				document.getElementById("dialog_fishing_room").innerHTML = `No fish was caught.`;
@@ -854,3 +903,4 @@ var main = {
 
 	},
 };
+

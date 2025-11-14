@@ -1,0 +1,64 @@
+
+#main_fishing {
+    width:320px;
+}
+#window_fishing {
+    display: flex; 
+    flex-direction: column;
+}
+
+#header_fishing_backgound {
+    z-index: 1;
+    position: absolute;
+    border: 2px solid #000;
+    background-color:cyan;
+}
+#header_fishing_room {
+	position: relative;
+}
+#title_fishing_room {
+    z-index:2; 
+    position: absolute;
+    font-size:16px;
+    height:20px;
+    margin:4px;
+    margin-left:10px;
+}
+#body_fishing_room {
+    position: relative;
+    user-select: none;
+}
+#canvas_fishing_room {
+    background-color:#333;
+	background-image: url('https://mdylantk.github.io/Fishing_Widget/assets/waterscape_day.png'); 
+    background-size: 100% 100%; 
+    image-rendering: pixelated; 
+    position: relative;
+    top:20px;
+	border-bottom: 2px solid #000;
+    border-left: 2px solid #000;
+    border-right: 2px solid #000;
+}
+#footer_fishing_room {
+    position: relative;
+}
+#footer_fishing_backgound {
+    z-index: 1;
+    position: absolute;
+    height:64px;
+    width:320px;
+	border: 2px solid #000;
+    background-color:cyan;
+    top:18;
+}
+#dialog_fishing_room {
+    z-index:2; 
+    position: absolute;
+    font-size:12px;
+    height:64px;
+    color:white;
+    margin:4px;
+    margin-left:6px;
+    margin-right:6px;
+    top:18;
+}
