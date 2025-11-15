@@ -3,9 +3,9 @@
 //may try to move those id to a more editable spot 
 //or move the main object declaration back to the html page
 
-import {Enumeration,Signal,Point,Viewport,CollisionMap,Scene_Object,Scene_Interface,Canvas_Scene} from "./scene.js";
+import {Enumeration,Signal,Point,Viewport,Collision_Map,Scene_Object,Scene_Interface,Canvas_Scene} from "./scene.js";
 
-class Access_Handler {
+export class Access_Handler {
 	//This allow object to connect to system it used without
 	//having the scene or main decided which it gets
 	//NOTE: could also make seprate object that handle diffrent scopes,
@@ -35,7 +35,7 @@ class Access_Handler {
 	}
 }
 
-class Bobber extends Scene_Object {
+export class Bobber extends Scene_Object {
 	line_casted_signal = new Signal();
 	line_reeled_in_signal = new Signal();
 	fish_hooked_signal = new Signal();
@@ -196,7 +196,9 @@ class Bobber extends Scene_Object {
 					//so sockets may be better. but this will be fine untill then
 					//may be good to have a way to convert to viewport size just to have it
 					//also need to get its size to help ajust the fish position
-					let ratio = this.collsion_map.get_depth(this.position);
+					let bounds = Point.subtract(this.collsion_map.get_bounds().max, this.collsion_map.get_bounds().min);
+					let ratio = 1.25-this.viewport.get_distance_from_viewport(new Point(this.viewport.world_position.x,this.position.y)) / bounds.y;
+					//let ratio = this.collsion_map.get_depth(this.position);
 					//should have a way to offset the image render or well sockets be better
 					//ratio do not take in account of the fish new position since new position depends on rendering sizes.
 					let bobber_size = this.get_size();
@@ -258,7 +260,11 @@ class Bobber extends Scene_Object {
 		if (options['access_handler']) {
 			let scene = options['access_handler'].get_access('scene')
 			if (scene) {
+				//NOTE: may need getter that pull from the interface
+				//so if the rare chance the scene changes them, then
+				//the correct verion will be pulled
 				this.collsion_map = scene.get_collsion_map();
+				this.viewport = scene.get_viewport();
 			}
 		}
 	}
@@ -535,6 +541,9 @@ class Test_Scene extends Canvas_Scene {
 		if (this.viewport != null) {
 			let mouse_position = new Point(event.clientX, event.clientY);
 			let handled = false;
+
+			let bounds = Point.subtract(this.collsion_map.get_bounds().max, this.collsion_map.get_bounds().min);
+			console.log(1.25-this.viewport.get_distance_from_viewport(new Point(this.viewport.world_position.x,mouse_position.y)) / bounds.y);
 			if (this.viewport.is_in_viewport(new Point(event.clientX, event.clientY))) {
 				//console.log("meow click (x,y)", event.clientX, event.clientY);
 				let scene_position = Point.subtract(mouse_position, this.viewport.get_position())
@@ -625,13 +634,22 @@ class Test_Scene extends Canvas_Scene {
 	//and ratio is a quick hack. hight should be base on the playfeild height
 	//a lerp may be useful if it is not a 0-1 case
 	draw_image(ctx, image, sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight) {
-		let ratio = this.collsion_map.get_depth(new Point(dx,dy));
+		let bounds = Point.subtract(this.collsion_map.get_bounds().max, this.collsion_map.get_bounds().min);
+		let ratio = 1.25-this.viewport.get_distance_from_viewport(new Point(this.viewport.world_position.x,dy)) / bounds.y;
+		//let ratio = this.collsion_map.get_depth(new Point(dx,dy));
 		ctx.drawImage(image, sx, sy, sWidth, sHeight, dx, dy, dWidth * ratio, dHeight * ratio);
 	}
 	draw_rect(ctx, x, y, width, height, color) {
-		let ratio = this.collsion_map.get_depth(new Point(x,y));
+		let bounds = Point.subtract(this.collsion_map.get_bounds().max, this.collsion_map.get_bounds().min);
+		let ratio = 1.25-this.viewport.get_distance_from_viewport(new Point(this.viewport.world_position.x,y)) / bounds.y;
+		//let ratio = this.collsion_map.get_depth(new Point(x,y));
 		ctx.fillStyle = color;
 		ctx.fillRect(x, y, width * ratio, height * ratio);
+	}
+	constructor(options = {}) {
+		super(options);
+		this.viewport.world_position.y = this.viewport.get_height();
+		this.viewport.world_position.x = this.viewport.get_width()/2.0;
 	}
 }
 
@@ -650,7 +668,7 @@ export var main = {
 	fish_data: {},
 	current_scene: null,
 	scene_interface: new Scene_Interface(), //this may or may not be used. it could be useful for providing extra feature to an object.
-	collsion_map: new CollisionMap(), //may keep a fix ref of it and have it overriden on scene switch like originally planed... unless keeping the scene interface than may use that
+	collsion_map: new Collision_Map(), //may keep a fix ref of it and have it overriden on scene switch like originally planed... unless keeping the scene interface than may use that
 	access_handler: new Access_Handler(),
 	pause_state: 0,//bitflag: 0 = none, 1 = update, 2 = rendering. 3 = both,(0:update,1:rendering,2:unfocus) 
 	last_update_time: Date.now(),

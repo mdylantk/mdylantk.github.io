@@ -283,7 +283,7 @@ export class Signal {
  *   @description Handles fetching info about existing collsion of a scene or space
  *   @class
 */
-export class CollisionMap{
+export class Collision_Map{
     is_in_bounds(value){
         return true
     }
@@ -311,7 +311,12 @@ export class CollisionMap{
  *   @description A generic viewport for declaring what is visable in a space
  *   @class
 */
-export class Viewport {   
+export class Viewport {
+    //world position is its point in the world. also could be known as 
+    //global position. This is used when interacting with the collsion map or 
+    //anything that represent the world. cameras may be added to allow
+    //other looking points, but that may be up to who implements it.
+    world_position = new Point();
     get_height(){
         return 0.0
     }
@@ -324,10 +329,12 @@ export class Viewport {
     get_position(){
         return new Point()
     }
-    //the viewport may change the render size of objects such as objects
-    //whos depth is far away.
+    //addition scaling that the viewport may affect.
     get_scaling(){
         return new Point(1.0,1.0);
+    }
+    get_distance_from_viewport(position = new Point()){
+        return Point.distance_to(position,this.world_position);
     }
     is_in_viewport(point = new Point(), local = false){
         let position = (local) ? new Point()  : this.get_position();
