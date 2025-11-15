@@ -542,8 +542,8 @@ class Test_Scene extends Canvas_Scene {
 			let mouse_position = new Point(event.clientX, event.clientY);
 			let handled = false;
 
-			let bounds = Point.subtract(this.collsion_map.get_bounds().max, this.collsion_map.get_bounds().min);
-			console.log(1.25-this.viewport.get_distance_from_viewport(new Point(this.viewport.world_position.x,mouse_position.y)) / bounds.y);
+			//let bounds = Point.subtract(this.collsion_map.get_bounds().max, this.collsion_map.get_bounds().min);
+			//console.log(1.25-this.viewport.get_distance_from_viewport(new Point(this.viewport.world_position.x,mouse_position.y)) / bounds.y);
 			if (this.viewport.is_in_viewport(new Point(event.clientX, event.clientY))) {
 				//console.log("meow click (x,y)", event.clientX, event.clientY);
 				let scene_position = Point.subtract(mouse_position, this.viewport.get_position())
