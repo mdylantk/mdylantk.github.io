@@ -17,6 +17,15 @@
 				<div id="title_fishing_room" role="status" aria-live="polite">
 					Fishing
 				</div>
+				<div id="title_fishing_buttons">
+					<!-- Hidding unused options.
+					 O may be reserve for options
+					 X may be reserve for a back, return, or a force cancel
+					-->
+					<button type="button" class="title_button" style="visibility: hidden;" onclick="on_title_button(0)">O</button>
+					<button type="button" class="title_button" onclick="on_title_button(1)">B</button>
+					<button type="button" class="title_button" style="visibility: hidden;" onclick="on_title_button(2)">X</button>
+				</div>
 			</div>
 			<!--  user-select: none; will disable selecting things when clicking too much on the canvas. Note that with will disable selection text in elements
 		so it is best to use it in elements that do not have selectable text-->
@@ -24,6 +33,9 @@
 				<canvas id="canvas_fishing_room" width="320" height="320" role="application" aria-label="Game Canvas">
 					Game Canvas
 				</canvas>
+				<div id="inventory" hidden>
+					meow meow meow
+				</div>
 			</div>
 			<div id="footer_fishing_room">
 				<img src="./assets/Title_Border.png" alt="dialog texture"
@@ -43,10 +55,25 @@
 </div>
 
 <script type="module">
+	//this is to start the game
 	import {main} from "./scripts_js/fishing_game.js"
 	//todo: maybe feed the element ids needed here
 	//and handle them abstractly in fishing_game
 	main.setup();
+	
+</script>
+<script>
+	//this is for any js that handles responding to html
+	//declared on this page since they will not know
+	//any functions delayed in any module types
+	//note: the game code may need to listen directly to buttons
+	//if it affects the game at all.
+	function on_title_button(id){
+		if (id == 1){
+			element = document.getElementById('inventory');
+			element.hidden = !element.hidden;
+		}
+	}
 </script>
 
 </html>

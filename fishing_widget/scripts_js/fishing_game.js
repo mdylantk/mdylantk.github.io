@@ -604,6 +604,8 @@ class Test_Scene extends Canvas_Scene {
 		//and use the world bounds, but at the time the background is render on the viewport
 		//and could change size, so this works for now.
 		collsion_map.get_bounds = () => {
+			//NOTE:TODO: things that use this may need to offset it once this is no longer depentent on
+			//viewport bounds.
 			const viewport = this.viewport
 			return {
 				type: "square",
@@ -802,6 +804,15 @@ export var main = {
 		}
 		return false;
 	},
+	update_inventory_ui(){
+		let ui = document.getElementById('inventory');
+		let text = 'Inventory: <br>';
+		for (var prop in this.player_data.catches) {
+			text += `${this.player_data.catches[prop].amount} ${prop} (${this.player_data.catches[prop].total_weight.toFixed(2)} kg). <br>`;
+		}
+		ui.innerHTML = text
+
+	},
 	async setup() {
 		let game = this; //a ref to this for the use in callables created here
 		this.animation_data = await fetch_json('./data/animation_data.json');
@@ -809,6 +820,7 @@ export var main = {
 		console.log(this.animation_data);
 		console.log(this.fish_data);
 		this.load_player_data();
+		this.update_inventory_ui();
 		//this.player_data={'catches':{}}; //can load it here as well
 		//set up acess_handler refs
 		//scene currently have limited acess since most stuff
@@ -898,6 +910,7 @@ export var main = {
 				//breaking it up base on importaint and not may be needed
 				//and update as nessary
 				game.save_player_data();
+				game.update_inventory_ui();
 				game.play_sound("splash_sound");
 			}
 			else {

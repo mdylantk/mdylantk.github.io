@@ -23,6 +23,20 @@
     height:20px;
     margin:4px;
     margin-left:10px;
+    color:white;
+}
+#title_fishing_buttons{
+    z-index:2;
+    position: absolute;
+    font-size:16px;
+    margin:2px;
+    left: 261px;
+}
+.title_button{
+    padding: 0px 2px;
+    margin:-1px;
+    background-color: #33333385;
+    color:white;
 }
 #body_fishing_room {
     position: relative;
@@ -38,12 +52,18 @@
 	border-bottom: 2px solid #000;
     border-left: 2px solid #000;
     border-right: 2px solid #000;
+    z-index: 0;
+}
+#inventory{
+    top:20px;
+    position: absolute;
+    z-index: 10;
 }
 #footer_fishing_room {
     position: relative;
 }
 #footer_fishing_backgound {
-    z-index: 1;
+    z-index: 0;
     position: absolute;
     height:64px;
     width:320px;
@@ -52,7 +72,7 @@
     top:18;
 }
 #dialog_fishing_room {
-    z-index:2; 
+    z-index:1; 
     position: absolute;
     font-size:12px;
     height:64px;
