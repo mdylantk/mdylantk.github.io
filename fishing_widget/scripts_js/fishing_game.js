@@ -464,10 +464,29 @@ class Fish extends Scene_Object {
 	new_fish(fish_data){
 		const normal_weight = 0.5;
 		let weight_scaling = 1.0;
+		let rarity_random = Math.random();
 		this.fish_data = fish_data; //note may handle this as an id
-		//and have a data access pass to fetch it from
-		this.random = Math.random();//this is to get a value from 0-1 used to caculate aspects of the fish
-		this.weight = this.random * ((this.fish_data.max_weight || 1.0) - (this.fish_data.min_weight || 1.0)) + (this.fish_data.min_weight || 1.0);
+		let max_weight = this.fish_data.max_weight || 1.0;
+		let min_weight = this.fish_data.min_weight || 0.0;
+		let max_range = max_weight - min_weight;
+		let min_range = min_weight;
+
+		
+		//should split the weight into three diffrent sets (small, average, and large) and a preroll that decides which group
+		//say 2-9 is avrage. 1 is small, and 10 is large. also could roll a few times (normal, small, large) but may make large extra rare
+		//also may need to provide an avrage or mean size to the data so it can be offset correctly
+		if (rarity_random > 0.9){
+			min_range = max_weight * 0.5
+			max_range *= 0.75;
+		}
+		else if (rarity_random < 0.1){
+			max_range *= 0.25;
+		}
+		else{
+			min_range = max_weight * 0.25
+			max_range *= 0.5;
+		}
+		this.weight = Math.random() * (max_range-min_range) + min_range;
 		//a test for scaling base on size. this uses existing scale, but may set it base on fish data. also storing random may not be needed
 		//it currently is used as a quick way to get the orignal 0-1 value used for the weight.
 		if (this.weight > normal_weight){
