@@ -58,6 +58,10 @@
     top:20px;
     position: absolute;
     z-index: 10;
+    margin: 8px;
+    overflow-y: auto;
+    height: 290px;
+    width: 97%;
 }
 #footer_fishing_room {
     position: relative;

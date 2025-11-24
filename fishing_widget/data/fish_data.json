@@ -88,5 +88,188 @@
 		"saltwater": false,
 		"detection_range":32.0,
 		"freshwater": true
+	},
+	"Pike": {
+		"name":"Pike",
+		"min_weight":1.4,
+		"max_weight":28.4,
+		"average_weight":11.3,
+		"aggressiveness":1.0,
+		"diet":["small_fish"],
+		"saltwater": false,
+		"detection_range":32.0,
+		"freshwater": true
+	},
+	"Pickerel": {
+		"name":"Pickerel",
+		"min_weight":1.4,
+		"max_weight":4.0,
+		"average_weight":2.0,
+		"aggressiveness":1.0,
+		"diet":["small_fish"],
+		"saltwater": false,
+		"detection_range":32.0,
+		"freshwater": true
+	},
+	"Muskellunge": {
+		"name":"Muskellunge",
+		"min_weight":7.0,
+		"max_weight":30.0,
+		"average_weight":16.5,
+		"aggressiveness":1.0,
+		"diet":["small_fish"],
+		"saltwater": false,
+		"detection_range":32.0,
+		"freshwater": true
+	},
+	"Bluegill": {
+		"name":"Bluegill",
+		"min_weight":0.1,
+		"max_weight":1.0,
+		"aggressiveness":1.0,
+		"diet":["insects","worms"],
+		"saltwater": false,
+		"detection_range":32.0,
+		"freshwater": true
+	},
+	"Mola": {
+		"name":"Mola",
+		"min_weight":247.0,
+		"max_weight":1000.0,
+		"aggressiveness":1.0,
+		"diet":["small_fish"],
+		"saltwater": true,
+		"detection_range":32.0,
+		"freshwater": false
+	},
+	"Sunfish": {
+		"name":"Sunfish",
+		"min_weight":0.1,
+		"max_weight":1.0,
+		"aggressiveness":1.0,
+		"diet":["insects","worms"],
+		"saltwater": false,
+		"detection_range":32.0,
+		"freshwater": true
+	},
+	"Drum": {
+		"name":"Drum",
+		"min_weight":1.0,
+		"max_weight":25.0,
+		"aggressiveness":1.0,
+		"diet":["insects","worms"],
+		"saltwater": false,
+		"detection_range":32.0,
+		"freshwater": true
+	},
+	"Tuna": {
+		"name":"Tuna",
+		"min_weight":20.0,
+		"max_weight":600.0,
+		"aggressiveness":1.0,
+		"diet":["small_fish","squid"],
+		"saltwater": true,
+		"detection_range":32.0,
+		"freshwater": false
+	},
+	"Red Snapper": {
+		"name":"Red Snapper",
+		"min_weight":2.0,
+		"max_weight":20.0,
+		"aggressiveness":1.0,
+		"diet":["small_fish","squid"],
+		"saltwater": true,
+		"detection_range":32.0,
+		"freshwater": false
+	},
+	"Grouper": {
+		"name":"Grouper",
+		"min_weight":5.0,
+		"max_weight":300.0,
+		"aggressiveness":1.0,
+		"diet":["small_fish", "crustaceans"],
+		"saltwater": true,
+		"detection_range":32.0,
+		"freshwater": false
+	},
+	"Halibut": {
+		"name":"Halibut",
+		"min_weight":5.0,
+		"max_weight":300.0,
+		"aggressiveness":1.0,
+		"diet":["small_fish","squid"],
+		"saltwater": true,
+		"detection_range":32.0,
+		"freshwater": false
+	},
+	"Marlin": {
+		"name":"Marlin",
+		"min_weight":50.0,
+		"max_weight":700.0,
+		"aggressiveness":1.0,
+		"diet":["small_fish","squid"],
+		"saltwater": true,
+		"detection_range":32.0,
+		"freshwater": false
+	},
+	"Swordfish": {
+		"name":"Swordfish",
+		"min_weight":50.0,
+		"max_weight":650.0,
+		"aggressiveness":1.0,
+		"diet":["small_fish","squid"],
+		"saltwater": true,
+		"detection_range":32.0,
+		"freshwater": false
+	},
+	"Tarpon": {
+		"name":"Tarpon",
+		"min_weight":10.0,
+		"max_weight":150.0,
+		"aggressiveness":1.0,
+		"diet":["small_fish", "crustaceans"],
+		"saltwater": true,
+		"detection_range":32.0,
+		"freshwater": false
+	},
+	"Sea Bass": {
+		"name":"Sea Bass",
+		"min_weight":1.0,
+		"max_weight":50.0,
+		"aggressiveness":1.0,
+		"diet":["small_fish", "crustaceans"],
+		"saltwater": true,
+		"detection_range":32.0,
+		"freshwater": false
+	},
+	"Mackerel": {
+		"name":"Mackerel",
+		"min_weight":0.5,
+		"max_weight":10.0,
+		"aggressiveness":1.0,
+		"diet":["small_fish"],
+		"saltwater": true,
+		"detection_range":32.0,
+		"freshwater": false
+	},
+	"Tilapia": {
+		"name":"Tilapia",
+		"min_weight":0.5,
+		"max_weight":5.0,
+		"aggressiveness":1.0,
+		"diet":["vegeatbles", "plants"],
+		"saltwater": false,
+		"detection_range":32.0,
+		"freshwater": true
+	},
+	"Dorado": {
+		"name":"Dorado",
+		"min_weight":5.0,
+		"max_weight":40.0,
+		"aggressiveness":1.0,
+		"diet":["small_fish", "squid"],
+		"saltwater": true,
+		"detection_range":32.0,
+		"freshwater": false
 	}
 }
