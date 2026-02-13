@@ -157,7 +157,6 @@ include:
   - files
   - _webpages
   - fishing_widget
-  - scsw_web
 exclude:
   - "*.sublime-project"
   - "*.sublime-workspace"
