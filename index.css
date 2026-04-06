@@ -1,0 +1,121 @@
+body {
+	color: #37c437;
+	margin: 0%;
+}
+a {
+	color: #2cf5b5;
+}
+#nav{
+	text-align: center;
+	background-color: #771390;
+	width: 100%;
+	position: fixed;
+}
+#nav ul {
+	list-style-type: none;
+	margin: 0;
+	padding: 0;
+	overflow: hidden;
+	display: inline-block;
+}
+
+#nav li {
+	float: left;
+	display: inline;
+}
+
+#nav li a {
+	display: block;
+	text-align: center;
+	padding: 12px 12px;
+	text-decoration: none;
+}
+	#nav li a:hover:not(.active) {
+		background-color: #14b89a;
+	}
+.active {
+	background-color: #0efbc8;
+	color: #771390;
+}
+#background {
+	background-color: #000f;
+	background-image: url(https://64.media.tumblr.com/b9d482b908f65ddc3a24266dfa4f66c2/d260b1b2e5c9c131-30/s2048x3072/bc4812758a88d422406f9a01b8913fb71894ad76.jpg);
+    background-repeat: repeat;
+    background-position: center top;
+
+	position: fixed;
+	width: 100%;
+	height: 100%;
+	z-index: -1;
+}
+.circle-image {
+	width: 64px; 
+	height: 64px; 
+	border-radius: 50%; 
+	border: 2px solid #084218; 
+	object-fit: cover; 
+}
+.text-center{
+	text-align: center;
+}
+.title {
+	color: #0efbc8;
+}
+.info_container {
+	display: flex;
+	flex-direction: column;
+	height: fit-content;
+	background: #771390;
+	border: 8px solid #084218;
+	border-radius: 2px;
+	image-rendering: pixelated;
+	/*border-image-source: url(LINK_URL);*/
+	border-image-slice: 25%;
+	border-image-repeat: repeat;
+	border-image-width: 8px;
+	width: 400px;
+	margin-top: 2%;
+	margin-left: 0.25%;
+	margin-right: 0.25%;
+	margin-bottom: 2%;
+}
+.profile_icon{
+	display: flex;
+	justify-content: center;
+
+	padding-top: 16px;
+	padding-left: 16px;
+	padding-right: 16px;
+}
+.info_title{
+	text-align: center;
+	padding-left: 16px;
+	padding-right: 16px;
+}
+.info_content{
+	background-color: #0cefff52;
+    border: 2px solid #3665E7;
+	padding-left: 16px;
+	padding-right: 16px;
+}
+.info_content.media{
+	align-self: center;
+	padding-top: 16px;
+	padding-bottom: 16px;
+}
+.max_image{
+	width:320px;
+}
+.info_links{
+	padding-top: 16px;
+	padding-left: 16px;
+	padding-right: 16px;
+	padding-bottom: 16px;
+}
+
+#body_container {
+	display: flex;
+	justify-content: center;
+	flex-wrap: wrap;
+	padding-top: 64px;
+}
