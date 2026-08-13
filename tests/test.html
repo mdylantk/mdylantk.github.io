@@ -1,6 +1,6 @@
 <link rel="stylesheet" href="test.css">
 
-<div class="main">
+<div class="main" hidden>
     <div class="container" style="position: absolute; top: 10%; left: 10%;">
         container
         <div class="headItem">
@@ -69,3 +69,10 @@
 
 </div>
 <script src="test.js"></script>
+<script>
+    const testWidget = new RecipeConversion()
+    const testContainer = document.createElement("div");
+    testContainer.id = 'testContainer'
+    document.body.appendChild(testContainer);
+    testWidget.init('testContainer')
+</script>
