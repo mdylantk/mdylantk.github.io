@@ -121,10 +121,10 @@ class RecipeConversion {
     //Note: each element would have a class realted to the role
     //title, multiplier, container for the conversions, container for the results, display name, value, type, from, to, remove, add
 
-    removeItems(items = []) {
-        for (let item of items) {
-            if (item) {
-                item.remove()
+    removeElements(elements = []) {
+        for (let element of elements) {
+            if (element) {
+                element.remove()
             }
         }
         //this is to be used as a callable. items should be a cache array of the items in question instead of have two remove (one for an item and another for two items)
@@ -144,10 +144,33 @@ class RecipeConversion {
         }
         return element
     }
+    conversionTable = [
+        [1, 16, 48, 96, 768, 1536, 3072, 12288],//spoons and cups using 1/16 of a tsp as the base
+        [1, 1000]//liters using ml as the base
+    ]
+    convertValue(value, from, to, table = this.conversionTable) {
+        let result = value
+
+        //note: 0124 where 12 is the index and 4 is the type
+        const fromType = from % 10
+        const fromIndex = Math.floor(from / 10)
+        const toType = to % 10
+        const toIndex = Math.floor(to / 10)
+        const fromValue = table[fromType][fromIndex] || 1
+        const toValue = table[toType][toIndex] || 1
+        result *= fromValue
+        if (fromType !== toType) {
+            //run the conversion logic between types
+        }
+        result /= toValue
+
+        return result
+    }
     //this handles the basic item layout without dealing with select types
     //(the dedicated item types will handle that)
-    addItem(type = 0,valueCaculation = undefined) {
-        const elements = []
+    createItem(type = 0, fromTable = {}, toTable = {}) {
+        const item = { elements: [] }
+        const elements = item.elements
         elements.push(this.addElement('div', this.inputBox))
         const input = elements.at(-1)
         elements.push(this.addElement('div', this.outputBox))
@@ -169,9 +192,51 @@ class RecipeConversion {
             //outputValueElement.innerText = onValueChange(inputValueElement.value)
             handler.requestUpdate()
         });
+
+        let inputFromElement
+        let inputToElement
+        if (type === 1) {
+            elements.push(this.addElement('select', input, { name: 'From' }, [this.inputFromClass]))
+            inputFromElement = elements.at(-1)
+            inputFromElement.addEventListener('change', (event, handler = this) => {
+                handler.requestUpdate()
+            });
+            elements.push(this.addElement('select', input, { name: 'To' }, [this.inputToClass]))
+            inputToElement = elements.at(-1)
+            inputToElement.addEventListener('change', (event, handler = this) => {
+                handler.requestUpdate()
+            });
+            if (fromTable) {
+                Object.keys(fromTable).forEach(key => {
+                    elements.push(this.addElement('option', inputFromElement, { value: fromTable[key] || 0, textContent: key }))
+                });
+            }
+            if (toTable) {
+                Object.keys(toTable).forEach(key => {
+                    elements.push(this.addElement('option', inputToElement, { value: toTable[key] || 0, textContent: key }))
+                });
+            }
+        }
+
+
         const onValueChange = () => {
-            if (valueCaculation) {
-                outputValueElement.innerText = onValueChange(inputValueElement.value) * this.multiplier
+
+            //Note: this is for conversion with same type. need a conversion value and identifier for each type conversion
+            //such as imp to metric and mass to vol.
+            //in short a conversion function may be needed that takes the keys and pull from static tables
+            //the keys in questions would need to be formated so their types can be extracted either prefix them or use
+            //a fixed int structure
+
+            if (item.updateValue) {
+                outputValueElement.innerText = item.updateValue(inputValueElement.value) * this.multiplier
+                return
+            }
+            if (type === 1) {
+                //using `this` may be risky in callables, but since this is called in the class instance, then it should be fine
+                //note: table may be change to an array if names(values) to be used or kept as is and values will be replace by string id or number index 
+                //might just use an int and split into two componets. type and index. so if type is diffrent, will do the conversion on the type table untill in correct scope
+                //and then use the conversion table
+                outputValueElement.innerText = this.convertValue(inputValueElement.value, inputFromElement.value, inputToElement.value) * this.multiplier
                 return
             }
             outputValueElement.innerText = inputValueElement.value * this.multiplier
@@ -181,35 +246,33 @@ class RecipeConversion {
         elements.push(this.addElement('button', input, { innerHTML: 'x' }, [this.removeButtonClass]))
         elements.at(-1).addEventListener('click', (event, handler = this) => {
             this.updateSignals.delete(onValueChange)
-            handler.removeItems(elements)
+            handler.removeElements(elements)
+            item.elements.length = 0;
+            if (item.updateValue) { delete item.updateValue }
         });
 
 
-
-        return elements
+        return item
     }
 
     //Note: add conv also add results. also the remove callable should remove the conv and results so there no reason to keep track of them
     addMassConvItem() {
-        const elements = this.addItem(1)
-
-        if (this.roughFormat) {
-            elements.push(document.createElement("br"))
-            this.inputBox.appendChild(elements.at(-1));
-        }
+        const item = this.createItem(1)
 
     }
     addVolConvItem() {
-        const elements = this.addItem(2)
-
-        if (this.roughFormat) {
-            elements.push(document.createElement("br"))
-            this.inputBox.appendChild(elements.at(-1));
+        //TODO: the table can be stored elsewhere or handle diffrently. depends since mass to vol would be pulling from these tables
+        //may make a big static(or single instance) table and just pass their display names as a array to the create item to pull from that table
+        //or keep the id and add a display name table. (note: current index is not safe for an array look up due to only 2-3 of the first digets being used)
+        const table = {
+            M_TSP: 0, TSP: 10, TBSP: 20, FL_OZ: 30,
+            CUP: 40, PINT: 50, QUART: 60, GALLON: 70
         }
+        const item = this.createItem(1, table, table)
 
     }
     remove() {
-        this.removeItems([
+        this.removeElements([
             this.titleInput,
             this.upperInfoInput,
             this.lowerInfoInput,
@@ -329,11 +392,7 @@ class RecipeConversion {
         this.addItemSelection.addEventListener("change", (event, handler = this) => {
             switch (event.target.value) {
                 case "field":
-                    const elements = this.addItem(0)
-                    if (this.roughFormat) {
-                        elements.push(document.createElement("br"))
-                        this.inputBox.appendChild(elements.at(-1));
-                    }
+                    const item = this.createItem(0)
                     break;
                 case "mass":
                     this.addMassConvItem()
