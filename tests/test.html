@@ -68,8 +68,9 @@
     </div>
 
 </div>
-<script src="test.js"></script>
-<script>
+<script type="module" src="test.js"></script>
+<script type="module">
+    import { RecipeConversion } from './test.js'
     const testWidget = new RecipeConversion()
     const testContainer = document.createElement("div");
     testContainer.id = 'testContainer'

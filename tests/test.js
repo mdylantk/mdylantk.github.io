@@ -1,62 +1,63 @@
-
-const volConvId = {
-    MET_TO_IMP: 0, M_TSP: 1, TSP: 2, TBSP: 3, FL_OZ: 4,
-    CUP: 5, PINT: 6, QUART: 7, GALLON: 8,
-    ML: 9, L: 10
-}
-const volConvTable = [
-    3.24614624, 1, 16, 48, 96,
-    768, 1536, 3072, 12288,
-    1, 1000
+const conversionTable = [
+    [0.308057599], //met to imp vol,
+    [1, 16, 48, 96, 768, 1536, 3072, 12288],//spoons and cups using 1/16 of a tsp as the base
+    [1, 1000]//liters using ml as the base
 ]
-const VOL_MET_START = 9
-
-function convert(value, from = 0, to = 0, table = [], secondSetStart = 0) {
-    let result = value
-    const fromMulti = table[from]
-    const toMulti = table[to]
-    if (fromMulti) {
-        result *= fromMulti
-    }
-    //will only handle a second set. if there more than 2 conversion type, then the upper can chain these in the correct order and split
-    //the table into sets of two. or could make another function that solve it. generally this is for imp and met
-    //and not nessary needed.could have the upper convert to smallest unit of each case and then run these 
-    //and have a table of each conversion (can still group related conversion, just need to make sure the checks catches them)
-    if (secondSetStart) {
-        if (from >= VOL_MET_START && to < VOL_MET_START || to >= VOL_MET_START && from < VOL_MET_START) {
-            //convert to the correct unit
-            if (from > to) {
-                //met to imp
-                result *= table[0]
-            }
-            else {
-                //imp to met
-                result /= table[0]
-            }
+const conversionNames = [
+    ['met to imp vol', 'met to imp mass'],
+    ['1/16 tsp', 'tsp', 'tbsp', 'fl oz', 'cup', 'pint', 'quart', 'gallon'],
+    ['ml', 'litters']
+]
+const CONVERSION_KEYS = {
+    M_TSP: 1, TSP: 11, TBSP: 21, FL_OZ: 31,
+    CUP: 41, PINT: 51, QUART: 61, GALLON: 71,
+    ML: 2, L: 12
+}
+const imperialVolumeIds = [
+    CONVERSION_KEYS.M_TSP, CONVERSION_KEYS.TSP, CONVERSION_KEYS.TBSP, CONVERSION_KEYS.FL_OZ,
+    CONVERSION_KEYS.CUP, CONVERSION_KEYS.PINT, CONVERSION_KEYS.QUART, CONVERSION_KEYS.GALLON
+]
+const metricVolumeIds = [
+    CONVERSION_KEYS.ML, CONVERSION_KEYS.L
+]
+const volumeIds = [
+    ...imperialVolumeIds,
+    ...metricVolumeIds
+];
+const allIds = [
+    ...volumeIds
+]
+function getIndex(id = 0) {
+    return Math.floor(id / 10)
+}
+function getType(id = 0) {
+    return id % 10
+}
+function getConversionValue(id = 0) {
+    return conversionTable[getType(id)][getIndex(id)] || 1
+}
+function getConversionName(id = 0) {
+    return conversionNames[getType(id)][getIndex(id)] || 1
+}
+function convert(value = 1, fromId = 0, toId = 0, modifier = 1) {
+    const fromType = getType(fromId)
+    const toType = getType(toId)
+    value *= getConversionValue(fromId)
+    if (fromType !== toType) {
+        if (fromType === 1 && toType === 2) {
+            //imp vol to met vol
+            value *= conversionTable[0][0]
+        }
+        else if (fromType === 2 && toType === 1) {
+            //met vol to imp vol
+           value /= conversionTable[0][0]
         }
     }
-    if (toMulti) {
-        result /= toMulti
-    }
-    return result
+    value *= getConversionValue(toId)
+    return value
 }
-function convertVol(value, from = 0, to = 0) {
-    return convert(value, from, to, volConvTable, VOL_MET_START)
-}
-let value = 10, from = 2, to = VOL_MET_START
-console.log(value, ' ', from, ' ', to, ' ', convertVol(value, from, to))
 
-//the idea is this will proveide an init function that will find and populate an element with the passed id
-//(might use doc body if none or log an error)
-//the container will have a multipler and a add section 
-//while add provides a few elements that represent mass conversion, volumn conversion, value entry(for just multication), and  maybe a mass/volumn conversion that
-//item types to be defined due to the mass to volumn need a const that diffrent base on the item
-
-//NOTE sould add a string feild that represents what the item is. also may be good to add a feature to use an output element that display only the results
-//may be better to have the results at a diffrent area. reduce the size of the input and keep the results simple. name plus value also multipler at top with maybe a title
-//if added. 
-
-class RecipeConversion {
+export class RecipeConversion {
     container
     #multiplier = 1
     get multiplier() {
@@ -116,6 +117,8 @@ class RecipeConversion {
 
     massConvClass
     volConvClass
+
+    dataSegmentClass = 'RC_dataSegment'
     //end of css class overrides
 
     //Note: each element would have a class realted to the role
@@ -136,7 +139,7 @@ class RecipeConversion {
         Object.assign(element, properties);
         for (let cssClass of cssClasses) {
             if (cssClass) {
-                element.classList.add(this.cssClass)
+                element.classList.add(cssClass)
             }
         }
         if (parent) {
@@ -144,31 +147,26 @@ class RecipeConversion {
         }
         return element
     }
+    //index 0 will be reserve for conversons between diffrent types
     conversionTable = [
+        [0.308057599], //met to imp vol,
         [1, 16, 48, 96, 768, 1536, 3072, 12288],//spoons and cups using 1/16 of a tsp as the base
         [1, 1000]//liters using ml as the base
     ]
+    //may turn it into arrays
+    //and hold text in the table every other index ignoring 0
+    //since each group may act as a filter, though it could pull from one big table
+    conversionText = {
+        '1/16 TSP': 1, TSP: 11, TBSP: 21, 'FL OZ': 31,
+        Cup: 41, Pint: 51, Quart: 61, Gallon: 71,
+        ML: 2, Litters: 12
+    }
     convertValue(value, from, to, table = this.conversionTable) {
-        let result = value
-
-        //note: 0124 where 12 is the index and 4 is the type
-        const fromType = from % 10
-        const fromIndex = Math.floor(from / 10)
-        const toType = to % 10
-        const toIndex = Math.floor(to / 10)
-        const fromValue = table[fromType][fromIndex] || 1
-        const toValue = table[toType][toIndex] || 1
-        result *= fromValue
-        if (fromType !== toType) {
-            //run the conversion logic between types
-        }
-        result /= toValue
-
-        return result
+        return convert(value, from, to)
     }
     //this handles the basic item layout without dealing with select types
     //(the dedicated item types will handle that)
-    createItem(type = 0, fromTable = {}, toTable = {}) {
+    createItem(type = 0, fromTable = allIds, toTable = undefined) {
         const item = { elements: [] }
         const elements = item.elements
         elements.push(this.addElement('div', this.inputBox))
@@ -178,7 +176,7 @@ class RecipeConversion {
 
         elements.push(this.addElement('input', input, { name: 'Display Name' }, [this.inputLabelClass]))
         const inputLabelElement = elements.at(-1)
-        elements.push(this.addElement('span', output, { innerText: inputLabelElement.value }, [this.outputLabelClass]))
+        elements.push(this.addElement('span', output, { innerText: inputLabelElement.value }, [this.dataSegmentClass, this.outputLabelClass]))
         const outputLabelElement = elements.at(-1)
         inputLabelElement.addEventListener('change', () => {
             outputLabelElement.innerText = inputLabelElement.value
@@ -186,7 +184,7 @@ class RecipeConversion {
 
         elements.push(this.addElement('input', input, { name: 'Value' }, [this.inputValueClass]))
         const inputValueElement = elements.at(-1)
-        elements.push(this.addElement('span', output, { innerText: inputValueElement.value }, [this.outputValueClass]))
+        elements.push(this.addElement('span', output, { innerText: inputValueElement.value }, [this.dataSegmentClass, this.outputValueClass]))
         const outputValueElement = elements.at(-1)
         inputValueElement.addEventListener('change', (event, handler = this) => {
             //outputValueElement.innerText = onValueChange(inputValueElement.value)
@@ -195,6 +193,7 @@ class RecipeConversion {
 
         let inputFromElement
         let inputToElement
+        let outputValueTypeElement
         if (type === 1) {
             elements.push(this.addElement('select', input, { name: 'From' }, [this.inputFromClass]))
             inputFromElement = elements.at(-1)
@@ -206,15 +205,26 @@ class RecipeConversion {
             inputToElement.addEventListener('change', (event, handler = this) => {
                 handler.requestUpdate()
             });
+
+            elements.push(this.addElement('span', output, {}, [this.dataSegmentClass, this.outputValueTypeClass]))
+            outputValueTypeElement = elements.at(-1)
+
+
             if (fromTable) {
-                Object.keys(fromTable).forEach(key => {
-                    elements.push(this.addElement('option', inputFromElement, { value: fromTable[key] || 0, textContent: key }))
-                });
+                for (const id of fromTable) {
+                    elements.push(this.addElement('option', inputFromElement, { value: id || 0, textContent: getConversionName(id) }))
+                }
+                //Object.keys(fromTable).forEach(key => {
+                //    elements.push(this.addElement('option', inputFromElement, { value: fromTable[key] || 0, textContent: key }))
+                //});
             }
             if (toTable) {
-                Object.keys(toTable).forEach(key => {
-                    elements.push(this.addElement('option', inputToElement, { value: toTable[key] || 0, textContent: key }))
-                });
+                for (const id of toTable) {
+                    elements.push(this.addElement('option', inputToElement, { value: id || 0, textContent: getConversionName(id) }))
+                }
+                //Object.keys(toTable).forEach(key => {
+                //    elements.push(this.addElement('option', inputToElement, { value: toTable[key] || 0, textContent: key }))
+                //});
             }
         }
 
@@ -237,6 +247,7 @@ class RecipeConversion {
                 //might just use an int and split into two componets. type and index. so if type is diffrent, will do the conversion on the type table untill in correct scope
                 //and then use the conversion table
                 outputValueElement.innerText = this.convertValue(inputValueElement.value, inputFromElement.value, inputToElement.value) * this.multiplier
+                outputValueTypeElement.innerText = getConversionName(inputToElement.value)
                 return
             }
             outputValueElement.innerText = inputValueElement.value * this.multiplier
@@ -256,21 +267,6 @@ class RecipeConversion {
     }
 
     //Note: add conv also add results. also the remove callable should remove the conv and results so there no reason to keep track of them
-    addMassConvItem() {
-        const item = this.createItem(1)
-
-    }
-    addVolConvItem() {
-        //TODO: the table can be stored elsewhere or handle diffrently. depends since mass to vol would be pulling from these tables
-        //may make a big static(or single instance) table and just pass their display names as a array to the create item to pull from that table
-        //or keep the id and add a display name table. (note: current index is not safe for an array look up due to only 2-3 of the first digets being used)
-        const table = {
-            M_TSP: 0, TSP: 10, TBSP: 20, FL_OZ: 30,
-            CUP: 40, PINT: 50, QUART: 60, GALLON: 70
-        }
-        const item = this.createItem(1, table, table)
-
-    }
     remove() {
         this.removeElements([
             this.titleInput,
@@ -384,10 +380,29 @@ class RecipeConversion {
         )
         this.addElement('option', this.addItemSelection,
             {
-                value: 'volumn',
-                textContent: 'A field that allows Volumn conversion'
+                value: 'imperialVolume',
+                textContent: 'A field that allows imperial volume conversion'
             }
         )
+        this.addElement('option', this.addItemSelection,
+            {
+                value: 'metricVolume',
+                textContent: 'A field that allows metric volume conversion'
+            }
+        )
+        this.addElement('option', this.addItemSelection,
+            {
+                value: 'volume',
+                textContent: 'A field that any volume conversion'
+            }
+        )
+        this.addElement('option', this.addItemSelection,
+            {
+                value: 'all',
+                textContent: 'A field that allows all conversion'
+            }
+        )
+        
 
         this.addItemSelection.addEventListener("change", (event, handler = this) => {
             switch (event.target.value) {
@@ -395,10 +410,19 @@ class RecipeConversion {
                     const item = this.createItem(0)
                     break;
                 case "mass":
-                    this.addMassConvItem()
+                    this.createItem(1, [], [])
                     break;
-                case "volumn":
-                    this.addVolConvItem()
+                case "volume":
+                    this.createItem(1, volumeIds, volumeIds)
+                    break;
+                case "imperialVolume":
+                    this.createItem(1, imperialVolumeIds, imperialVolumeIds)
+                    break;
+                case "metricVolume":
+                    this.createItem(1, metricVolumeIds, metricVolumeIds)
+                    break;
+                case "all":
+                    this.createItem(1, allIds, allIds)
                     break;
                 default:
                     if (handler.debug) { console.log("Unknown selection.") }
