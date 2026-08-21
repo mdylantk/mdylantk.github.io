@@ -73,6 +73,7 @@
     import { RecipeConversion } from './test.js'
     const testWidget = new RecipeConversion()
     const testContainer = document.createElement("div");
+    testContainer.classList.add('testContainer')
     testContainer.id = 'testContainer'
     document.body.appendChild(testContainer);
     testWidget.init('testContainer')

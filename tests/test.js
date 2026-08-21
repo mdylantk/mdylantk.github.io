@@ -50,7 +50,7 @@ function convert(value = 1, fromId = 0, toId = 0, modifier = 1) {
         }
         else if (fromType === 2 && toType === 1) {
             //met vol to imp vol
-           value /= conversionTable[0][0]
+            value /= conversionTable[0][0]
         }
     }
     value *= getConversionValue(toId)
@@ -97,11 +97,13 @@ export class RecipeConversion {
     defaultRowClass = 'RC_defaultRow'
     //the default style for items, feilds, buttons, and inputs
     defaultItemClass = 'RC_defaultItem'
+    defaultNumberClass = 'RC_defaultNumber'
+    defaultTextClass = 'RC_defaultText'
 
     //Note: each element would have a class realted to the role
     //title, multiplier, container for the conversions, container for the results, display name, value, type, from, to, remove, add
-    createDefaultStyle(){
-        if (typeof this.defaultStyleElement === "undefined" || this.defaultStyleElement === null ){
+    createDefaultStyle() {
+        if (typeof this.defaultStyleElement === "undefined" || this.defaultStyleElement === null) {
             this.defaultStyleElement = document.createElement('style');
         }
         this.defaultStyleElement.type = 'text/css';
@@ -118,6 +120,18 @@ export class RecipeConversion {
                 grid-column: 1 / -1;
             }
             .${this.defaultItemClass} {
+                margin: 8px;
+            }
+            .${this.defaultNumberClass} {
+                width: 10%;
+                min-width: 32px;
+                max-width: 128px;
+                margin: 8px;
+            }
+            .${this.defaultTextClass} {
+                width: 25%;
+                min-width: 128px;
+                max-width: 320px;
                 margin: 8px;
             }
         `;
@@ -171,22 +185,30 @@ export class RecipeConversion {
     createItem(type = 0, fromTable = allIds, toTable = undefined) {
         const item = { elements: [] }
         const elements = item.elements
-        elements.push(this.addElement('div', this.inputBox,{},[this.defaultRowClass]))
+        elements.push(this.addElement('div', this.inputBox, {}, [this.defaultRowClass]))
         const input = elements.at(-1)
-        elements.push(this.addElement('div', this.outputBox,{},[this.defaultRowClass]))
+        elements.push(this.addElement('div', this.outputBox, {}, [this.defaultRowClass]))
         const output = elements.at(-1)
 
-        elements.push(this.addElement('input', input, { name: 'Display Name' }, [this.defaultItemClass,this.styles.inputLabelClass]))
+        elements.push(this.addElement(
+            'input', 
+            input, 
+            { 
+                name: 'Display Name',
+                placeholder: 'Label',
+                title: "Label"
+            }, 
+            [this.defaultTextClass, this.styles.inputLabelClass]))
         const inputLabelElement = elements.at(-1)
-        elements.push(this.addElement('span', output, { innerText: inputLabelElement.value }, [this.defaultItemClass, this.styles.outputLabelClass]))
+        elements.push(this.addElement('span', output, { innerText: inputLabelElement.value }, [this.defaultTextClass, this.styles.outputLabelClass]))
         const outputLabelElement = elements.at(-1)
         inputLabelElement.addEventListener('change', () => {
             outputLabelElement.innerText = inputLabelElement.value
         });
 
-        elements.push(this.addElement('input', input, { name: 'Value' }, [this.inputValueClass]))
+        elements.push(this.addElement('input', input, { name: 'Value',title: "Value" }, [this.defaultNumberClass,this.inputValueClass]))
         const inputValueElement = elements.at(-1)
-        elements.push(this.addElement('span', output, { innerText: inputValueElement.value }, [this.defaultItemClass, this.styles.outputValueClass]))
+        elements.push(this.addElement('span', output, { innerText: inputValueElement.value }, [this.defaultNumberClass, this.styles.outputValueClass]))
         const outputValueElement = elements.at(-1)
         inputValueElement.addEventListener('change', (event, handler = this) => {
             //outputValueElement.innerText = onValueChange(inputValueElement.value)
@@ -197,18 +219,18 @@ export class RecipeConversion {
         let inputToElement
         let outputValueTypeElement
         if (type === 1) {
-            elements.push(this.addElement('select', input, { name: 'From' }, [this.defaultItemClass,this.styles.inputFromClass]))
+            elements.push(this.addElement('select', input, { name: 'From',title: "From" }, [this.defaultItemClass, this.styles.inputFromClass]))
             inputFromElement = elements.at(-1)
             inputFromElement.addEventListener('change', (event, handler = this) => {
                 handler.requestUpdate()
             });
-            elements.push(this.addElement('select', input, { name: 'To' }, [this.defaultItemClass,this.styles.inputToClass]))
+            elements.push(this.addElement('select', input, { name: 'To',title: "To" }, [this.defaultItemClass, this.styles.inputToClass]))
             inputToElement = elements.at(-1)
             inputToElement.addEventListener('change', (event, handler = this) => {
                 handler.requestUpdate()
             });
 
-            elements.push(this.addElement('span', output, {}, [this.defaultItemClass, this.styles.outputValueTypeClass]))
+            elements.push(this.addElement('span', output, {}, [this.defaultTextlass, this.styles.outputValueTypeClass]))
             outputValueTypeElement = elements.at(-1)
 
 
@@ -256,7 +278,7 @@ export class RecipeConversion {
         }
         this.updateSignals.add(onValueChange)
 
-        elements.push(this.addElement('button', input, { innerHTML: 'x' }, [this.defaultItemClass,this.styles.removeButtonClass]))
+        elements.push(this.addElement('button', input, { innerHTML: 'x',title: "Remove" }, [this.defaultItemClass, this.styles.removeButtonClass]))
         elements.at(-1).addEventListener('click', (event, handler = this) => {
             this.updateSignals.delete(onValueChange)
             handler.removeElements(elements)
@@ -286,25 +308,26 @@ export class RecipeConversion {
             this.body
         ])
     }
-    init(element_id = '',styles={},createDefaultStyle=true) {
-        this.styles=styles
+    init(element_id = '', styles = {}, createDefaultStyle = true) {
+        this.styles = styles
         this.container = document.getElementById(element_id) || document.body;
         //todo: should verify the element for existing componets, but this really should only be called to create it
-        if(createDefaultStyle){
+        if (createDefaultStyle) {
             this.createDefaultStyle()
         }
         //this.defaultRowClass
-        this.body = this.addElement('div',this.container,{},[this.defaultBodyClass,styles.bodyClass])
-        this.titleInputBox = this.addElement('div',this.body,{},[this.defaultRowClass,styles.titleInputBoxClass])
+        this.body = this.addElement('div', this.container, {}, [this.defaultBodyClass, styles.bodyClass])
+        this.titleInputBox = this.addElement('div', this.body, {}, [this.defaultRowClass, styles.titleInputBoxClass])
         this.titleInput = this.addElement(
             'input',
             this.titleInputBox,
             {
                 type: "text",
                 name: 'Title',
-                placeholder: 'Title'
+                placeholder: 'Title',
+                title: "Title"
             },
-            [this.defaultItemClass,styles.titleInputClass]
+            [this.defaultTextClass, styles.titleInputClass]
         )
         this.titleInput.addEventListener('change', (event, handler = this) => {
             handler.title.innerText = event.target.value
@@ -314,9 +337,10 @@ export class RecipeConversion {
             this.body,
             {
                 name: 'Description',
-                placeholder: 'Description'
+                placeholder: 'Description',
+                title: "Description"
             },
-            [this.defaultRowClass,styles.upperInfoInputClass]
+            [this.defaultRowClass, styles.upperInfoInputClass]
         )
         this.upperInfoInput.addEventListener('change', (event, handler = this) => {
             handler.upperInfo.innerText = event.target.value
@@ -330,9 +354,9 @@ export class RecipeConversion {
                 name: 'Multiplier',
                 min: Number.MIN_VALUE,
                 value: 1,
-                title:"Multiplier"
+                title: "Multiplier"
             },
-            [this.defaultItemClass,styles.multiplierInputClass]
+            [this.defaultNumberClass, styles.multiplierInputClass]
         )
 
         this.multiplierInput.addEventListener('change', (event, handler = this) => {
@@ -348,14 +372,14 @@ export class RecipeConversion {
         });
 
         //this.inputBox = document.createElement("div");
-        this.inputBox = this.addElement('div', this.body, {}, [this.defaultContainerClass,styles.inputBoxClass])
+        this.inputBox = this.addElement('div', this.body, {}, [this.defaultContainerClass, styles.inputBoxClass])
 
 
         this.addItemSelection = this.addElement(
             'select',
             this.body,
             { name: "Add item selection" },
-            [this.defaultItemClass,styles.addItemSelectionClass]
+            [this.defaultItemClass, styles.addItemSelectionClass]
         )
         this.addElement('option', this.addItemSelection,
             {
@@ -399,7 +423,7 @@ export class RecipeConversion {
                 textContent: 'A field that allows all conversion'
             }
         )
-        
+
 
         this.addItemSelection.addEventListener("change", (event, handler = this) => {
             switch (event.target.value) {
@@ -434,23 +458,24 @@ export class RecipeConversion {
             this.body,
             {
                 name: 'Directions',
-                placeholder: 'Directions'
+                placeholder: 'Directions',
+                title: "Directions"
             },
-            [this.defaultRowClass,styles.lowerInfoInputClass]
+            [this.defaultRowClass, styles.lowerInfoInputClass]
         )
         this.lowerInfoInput.addEventListener('change', (event, handler = this) => {
             handler.lowerInfo.innerText = event.target.value
         })
 
 
-        
 
-        this.title = this.addElement('p', this.body, {}, [this.defaultRowClass,styles.titleClass])
-        this.upperInfo = this.addElement('p', this.body, {}, [this.defaultRowClass,styles.upperInfoClass])
 
-        this.outputBox = this.addElement('div', this.body, {}, [this.defaultContainerClass,styles.outputBoxClass])
+        this.title = this.addElement('p', this.body, {}, [this.defaultRowClass, styles.titleClass])
+        this.upperInfo = this.addElement('p', this.body, {}, [this.defaultRowClass, styles.upperInfoClass])
 
-        this.lowerInfo = this.addElement('p', this.body, {}, [this.defaultRowClass,styles.lowerInfoClass])
+        this.outputBox = this.addElement('div', this.body, {}, [this.defaultContainerClass, styles.outputBoxClass])
+
+        this.lowerInfo = this.addElement('p', this.body, {}, [this.defaultRowClass, styles.lowerInfoClass])
 
     }
 }
