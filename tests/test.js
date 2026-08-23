@@ -1,17 +1,23 @@
 const conversionTable = [
-    [0.308057599], //met to imp vol,
+    [0.308057599, 28349.5231, 0.0104166669, 1000], //met to imp vol,
     [1, 16, 48, 96, 768, 1536, 3072, 12288],//spoons and cups using 1/16 of a tsp as the base
-    [1, 1000]//liters using ml as the base
+    [1, 1000],//liters using ml as the base
+    [1, 16],
+    [1, 1000, 1000000]
 ]
 const conversionNames = [
     ['met to imp vol', 'met to imp mass'],
     ['1/16 tsp', 'tsp', 'tbsp', 'fl oz', 'cup', 'pint', 'quart', 'gallon'],
-    ['ml', 'litters']
+    ['ml', 'litters'],
+    ['oz', 'lb'],
+    ['mg', 'g', 'kg']
 ]
 const CONVERSION_KEYS = {
     M_TSP: 1, TSP: 11, TBSP: 21, FL_OZ: 31,
     CUP: 41, PINT: 51, QUART: 61, GALLON: 71,
-    ML: 2, L: 12
+    ML: 2, L: 12,
+    OZ: 3, LB: 13,
+    MG: 4, G: 14, KG: 24
 }
 const imperialVolumeIds = [
     CONVERSION_KEYS.M_TSP, CONVERSION_KEYS.TSP, CONVERSION_KEYS.TBSP, CONVERSION_KEYS.FL_OZ,
@@ -24,8 +30,19 @@ const volumeIds = [
     ...imperialVolumeIds,
     ...metricVolumeIds
 ];
+const imperialMassIds = [
+    CONVERSION_KEYS.OZ, CONVERSION_KEYS.LB
+]
+const metricMassIds = [
+    CONVERSION_KEYS.MG, CONVERSION_KEYS.G, CONVERSION_KEYS.KG
+]
+const massIds = [
+    ...imperialMassIds,
+    ...metricMassIds
+]
 const allIds = [
-    ...volumeIds
+    ...volumeIds,
+    ...massIds
 ]
 function getIndex(id = 0) {
     return Math.floor(id / 10)
@@ -49,11 +66,42 @@ function convert(value = 1, fromId = 0, toId = 0, modifier = 1) {
             value *= conversionTable[0][0]
         }
         else if (fromType === 2 && toType === 1) {
-            //met vol to imp vol
             value /= conversionTable[0][0]
         }
+        else if (fromType === 3 && toType === 4) {
+            //imp mass to met mass
+            value *= conversionTable[0][1]
+            console.log(`
+                from ${getConversionValue(fromId)}
+                type${conversionTable[0][1]}
+                to${getConversionValue(toId)}
+                `)
+        }
+        else if (fromType === 4 && toType === 3) {
+            //met vol to imp vol
+            value /= conversionTable[0][1]
+        }
+        else if (fromType === 1 && toType === 3) {
+            //imp vol to mass
+            value *= conversionTable[0][2] * modifier
+        }
+        else if (fromType === 3 && toType === 1) {
+            value /= conversionTable[0][2] * modifier
+        }
+        else if (fromType === 2 && toType === 4) {
+            //met vol to mass
+            value *= conversionTable[0][3] * modifier
+        }
+        else if (fromType === 4 && toType === 2) {
+            value /= conversionTable[0][3] * modifier
+        }
+        else {
+            //may do a greater than or less than case and convert
+            //twice or use a lookup to or just keep a long if statement
+            console.log('warning: diffrent conversion lack proper converion logic')
+        }
     }
-    value *= getConversionValue(toId)
+    value /= getConversionValue(toId)
     return value
 }
 
@@ -163,23 +211,7 @@ export class RecipeConversion {
         }
         return element
     }
-    //index 0 will be reserve for conversons between diffrent types
-    conversionTable = [
-        [0.308057599], //met to imp vol,
-        [1, 16, 48, 96, 768, 1536, 3072, 12288],//spoons and cups using 1/16 of a tsp as the base
-        [1, 1000]//liters using ml as the base
-    ]
-    //may turn it into arrays
-    //and hold text in the table every other index ignoring 0
-    //since each group may act as a filter, though it could pull from one big table
-    conversionText = {
-        '1/16 TSP': 1, TSP: 11, TBSP: 21, 'FL OZ': 31,
-        Cup: 41, Pint: 51, Quart: 61, Gallon: 71,
-        ML: 2, Litters: 12
-    }
-    convertValue(value, from, to, table = this.conversionTable) {
-        return convert(value, from, to)
-    }
+
     //this handles the basic item layout without dealing with select types
     //(the dedicated item types will handle that)
     createItem(type = 0, fromTable = allIds, toTable = undefined) {
@@ -191,13 +223,13 @@ export class RecipeConversion {
         const output = elements.at(-1)
 
         elements.push(this.addElement(
-            'input', 
-            input, 
-            { 
+            'input',
+            input,
+            {
                 name: 'Display Name',
                 placeholder: 'Label',
                 title: "Label"
-            }, 
+            },
             [this.defaultTextClass, this.styles.inputLabelClass]))
         const inputLabelElement = elements.at(-1)
         elements.push(this.addElement('span', output, { innerText: inputLabelElement.value }, [this.defaultTextClass, this.styles.outputLabelClass]))
@@ -206,7 +238,7 @@ export class RecipeConversion {
             outputLabelElement.innerText = inputLabelElement.value
         });
 
-        elements.push(this.addElement('input', input, { name: 'Value',title: "Value" }, [this.defaultNumberClass,this.inputValueClass]))
+        elements.push(this.addElement('input', input, { name: 'Value', title: "Value" }, [this.defaultNumberClass, this.inputValueClass]))
         const inputValueElement = elements.at(-1)
         elements.push(this.addElement('span', output, { innerText: inputValueElement.value }, [this.defaultNumberClass, this.styles.outputValueClass]))
         const outputValueElement = elements.at(-1)
@@ -219,12 +251,12 @@ export class RecipeConversion {
         let inputToElement
         let outputValueTypeElement
         if (type === 1) {
-            elements.push(this.addElement('select', input, { name: 'From',title: "From" }, [this.defaultItemClass, this.styles.inputFromClass]))
+            elements.push(this.addElement('select', input, { name: 'From', title: "From" }, [this.defaultItemClass, this.styles.inputFromClass]))
             inputFromElement = elements.at(-1)
             inputFromElement.addEventListener('change', (event, handler = this) => {
                 handler.requestUpdate()
             });
-            elements.push(this.addElement('select', input, { name: 'To',title: "To" }, [this.defaultItemClass, this.styles.inputToClass]))
+            elements.push(this.addElement('select', input, { name: 'To', title: "To" }, [this.defaultItemClass, this.styles.inputToClass]))
             inputToElement = elements.at(-1)
             inputToElement.addEventListener('change', (event, handler = this) => {
                 handler.requestUpdate()
@@ -270,7 +302,7 @@ export class RecipeConversion {
                 //note: table may be change to an array if names(values) to be used or kept as is and values will be replace by string id or number index 
                 //might just use an int and split into two componets. type and index. so if type is diffrent, will do the conversion on the type table untill in correct scope
                 //and then use the conversion table
-                outputValueElement.innerText = this.convertValue(inputValueElement.value, inputFromElement.value, inputToElement.value) * this.multiplier
+                outputValueElement.innerText = convert(inputValueElement.value, inputFromElement.value, inputToElement.value) * this.multiplier
                 outputValueTypeElement.innerText = getConversionName(inputToElement.value)
                 return
             }
@@ -278,7 +310,7 @@ export class RecipeConversion {
         }
         this.updateSignals.add(onValueChange)
 
-        elements.push(this.addElement('button', input, { innerHTML: 'x',title: "Remove" }, [this.defaultItemClass, this.styles.removeButtonClass]))
+        elements.push(this.addElement('button', input, { innerHTML: 'x', title: "Remove" }, [this.defaultItemClass, this.styles.removeButtonClass]))
         elements.at(-1).addEventListener('click', (event, handler = this) => {
             this.updateSignals.delete(onValueChange)
             handler.removeElements(elements)
@@ -405,12 +437,12 @@ export class RecipeConversion {
                 textContent: 'A field that allows imperial volume conversion'
             }
         )
-        this.addElement('option', this.addItemSelection,
-            {
-                value: 'metricVolume',
-                textContent: 'A field that allows metric volume conversion'
-            }
-        )
+        //this.addElement('option', this.addItemSelection,
+        //    {
+        //        value: 'metricVolume',
+        //        textContent: 'A field that allows metric volume conversion'
+        //    }
+        //)
         this.addElement('option', this.addItemSelection,
             {
                 value: 'volume',
@@ -431,7 +463,7 @@ export class RecipeConversion {
                     const item = this.createItem(0)
                     break;
                 case "mass":
-                    this.createItem(1, [], [])
+                    this.createItem(1, massIds, massIds)
                     break;
                 case "volume":
                     this.createItem(1, volumeIds, volumeIds)
@@ -439,9 +471,9 @@ export class RecipeConversion {
                 case "imperialVolume":
                     this.createItem(1, imperialVolumeIds, imperialVolumeIds)
                     break;
-                case "metricVolume":
-                    this.createItem(1, metricVolumeIds, metricVolumeIds)
-                    break;
+                //case "metricVolume":
+                //    this.createItem(1, metricVolumeIds, metricVolumeIds)
+                //    break;
                 case "all":
                     this.createItem(1, allIds, allIds)
                     break;
@@ -479,9 +511,3 @@ export class RecipeConversion {
 
     }
 }
-
-//const testWidget = new RecipeConversion()
-//const testContainer = document.createElement("div");
-//testContainer.id = 'testContainer'
-//document.body.appendChild(testContainer);
-//testWidget.init('testContainer')
