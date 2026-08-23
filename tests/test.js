@@ -1,44 +1,30 @@
 const conversionTable = [
-    [0.308057599, 28349.5231, 0.0104166669, 1000], //met to imp vol,
     [1, 16, 48, 96, 768, 1536, 3072, 12288],//spoons and cups using 1/16 of a tsp as the base
     [1, 1000],//liters using ml as the base
     [1, 16],
     [1, 1000, 1000000]
 ]
 const conversionNames = [
-    ['met to imp vol', 'met to imp mass'],
     ['1/16 tsp', 'tsp', 'tbsp', 'fl oz', 'cup', 'pint', 'quart', 'gallon'],
     ['ml', 'litters'],
     ['oz', 'lb'],
     ['mg', 'g', 'kg']
 ]
 const CONVERSION_KEYS = {
-    M_TSP: 1, TSP: 11, TBSP: 21, FL_OZ: 31,
-    CUP: 41, PINT: 51, QUART: 61, GALLON: 71,
-    ML: 2, L: 12,
-    OZ: 3, LB: 13,
-    MG: 4, G: 14, KG: 24
+    M_TSP: 0, TSP: 10, TBSP: 20, FL_OZ: 30,
+    CUP: 40, PINT: 50, QUART: 60, GALLON: 70,
+    ML: 1, L: 11,
+    OZ: 2, LB: 12,
+    MG: 3, G: 13, KG: 23
 }
-const imperialVolumeIds = [
+const volumeIds = [
+    CONVERSION_KEYS.ML, CONVERSION_KEYS.L,
     CONVERSION_KEYS.M_TSP, CONVERSION_KEYS.TSP, CONVERSION_KEYS.TBSP, CONVERSION_KEYS.FL_OZ,
     CONVERSION_KEYS.CUP, CONVERSION_KEYS.PINT, CONVERSION_KEYS.QUART, CONVERSION_KEYS.GALLON
-]
-const metricVolumeIds = [
-    CONVERSION_KEYS.ML, CONVERSION_KEYS.L
-]
-const volumeIds = [
-    ...imperialVolumeIds,
-    ...metricVolumeIds
 ];
-const imperialMassIds = [
-    CONVERSION_KEYS.OZ, CONVERSION_KEYS.LB
-]
-const metricMassIds = [
-    CONVERSION_KEYS.MG, CONVERSION_KEYS.G, CONVERSION_KEYS.KG
-]
 const massIds = [
-    ...imperialMassIds,
-    ...metricMassIds
+    CONVERSION_KEYS.MG, CONVERSION_KEYS.G, CONVERSION_KEYS.KG,
+    CONVERSION_KEYS.OZ, CONVERSION_KEYS.LB
 ]
 const allIds = [
     ...volumeIds,
@@ -56,51 +42,39 @@ function getConversionValue(id = 0) {
 function getConversionName(id = 0) {
     return conversionNames[getType(id)][getIndex(id)] || 1
 }
+
+function impToMetVolume(value) {
+    return value * 0.308057599
+}
+function metToImpVolume(value) {
+    return value / 0.308057599
+}
+function impToMetMass(value) {
+    return value * 28349.5231
+}
+function metToImpMass(value) {
+    return value * 0.00003527
+}
 function convert(value = 1, fromId = 0, toId = 0, modifier = 1) {
     const fromType = getType(fromId)
     const toType = getType(toId)
+    //note: -1 is due to the first index(0) being used of type conversion
+    //can change to -2 and insert mass densities to index 1. note: this would
+    //mean all types would need be increased by one
     value *= getConversionValue(fromId)
     if (fromType !== toType) {
-        if (fromType === 1 && toType === 2) {
-            //imp vol to met vol
-            value *= conversionTable[0][0]
+        if ((fromType === 0 || fromType === 1) && (toType === 0 || toType === 1)) {
+            value = fromType < toType ? impToMetVolume(value) : metToImpVolume(value);
         }
-        else if (fromType === 2 && toType === 1) {
-            value /= conversionTable[0][0]
-        }
-        else if (fromType === 3 && toType === 4) {
-            //imp mass to met mass
-            value *= conversionTable[0][1]
-            console.log(`
-                from ${getConversionValue(fromId)}
-                type${conversionTable[0][1]}
-                to${getConversionValue(toId)}
-                `)
-        }
-        else if (fromType === 4 && toType === 3) {
-            //met vol to imp vol
-            value /= conversionTable[0][1]
-        }
-        else if (fromType === 1 && toType === 3) {
-            //imp vol to mass
-            value *= conversionTable[0][2] * modifier
-        }
-        else if (fromType === 3 && toType === 1) {
-            value /= conversionTable[0][2] * modifier
-        }
-        else if (fromType === 2 && toType === 4) {
-            //met vol to mass
-            value *= conversionTable[0][3] * modifier
-        }
-        else if (fromType === 4 && toType === 2) {
-            value /= conversionTable[0][3] * modifier
+        else if ((fromType === 2 || fromType === 3) && (toType === 2 || toType === 3)) {
+            value = fromType < toType ? impToMetMass(value) : metToImpMass(value);
         }
         else {
-            //may do a greater than or less than case and convert
-            //twice or use a lookup to or just keep a long if statement
-            console.log('warning: diffrent conversion lack proper converion logic')
+            console.log('NOTE: density conversion logic needed. ')
+            //may need to convert to met if imp (case 1 and 2) and then apply the desity value(gain from modifier)
         }
     }
+
     value /= getConversionValue(toId)
     return value
 }
@@ -428,31 +402,19 @@ export class RecipeConversion {
         this.addElement('option', this.addItemSelection,
             {
                 value: 'mass',
-                textContent: 'A field that allows mass conversio'
+                textContent: 'Mass conversion'
             }
         )
-        this.addElement('option', this.addItemSelection,
-            {
-                value: 'imperialVolume',
-                textContent: 'A field that allows imperial volume conversion'
-            }
-        )
-        //this.addElement('option', this.addItemSelection,
-        //    {
-        //        value: 'metricVolume',
-        //        textContent: 'A field that allows metric volume conversion'
-        //    }
-        //)
         this.addElement('option', this.addItemSelection,
             {
                 value: 'volume',
-                textContent: 'A field that any volume conversion'
+                textContent: 'volume conversion'
             }
         )
         this.addElement('option', this.addItemSelection,
             {
                 value: 'all',
-                textContent: 'A field that allows all conversion'
+                textContent: 'All conversion'
             }
         )
 
@@ -468,12 +430,6 @@ export class RecipeConversion {
                 case "volume":
                     this.createItem(1, volumeIds, volumeIds)
                     break;
-                case "imperialVolume":
-                    this.createItem(1, imperialVolumeIds, imperialVolumeIds)
-                    break;
-                //case "metricVolume":
-                //    this.createItem(1, metricVolumeIds, metricVolumeIds)
-                //    break;
                 case "all":
                     this.createItem(1, allIds, allIds)
                     break;
