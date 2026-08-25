@@ -1,61 +1,115 @@
-const conversionTable = [
+export const conversionTable = [
     [1, 16, 48, 96, 768, 1536, 3072, 12288],//spoons and cups using 1/16 of a tsp as the base
     [1, 1000],//liters using ml as the base
     [1, 16],
-    [1, 1000, 1000000]
+    [1, 1000, 1000000],
+    [
+        1000,
+        530, 570, 430,
+        850, 720, 560,
+        910, 920, 910,
+        1030, 1010, 1020,
+        1420, 1370, 1400,
+        750, 410, 680,
+        920, 920,
+        870, 900,
+        1220, 590,
+    ]//in mg/ml
 ]
-const conversionNames = [
+export const conversionNames = [
     ['1/16 tsp', 'tsp', 'tbsp', 'fl oz', 'cup', 'pint', 'quart', 'gallon'],
     ['ml', 'litters'],
     ['oz', 'lb'],
-    ['mg', 'g', 'kg']
+    ['mg', 'g', 'kg'],
+    [
+        'water',
+        'all-purpose flour', 'bread flour', 'cake flour',
+        'granulated sugar', 'brown sugar', 'powder sugar',
+        'butter', 'lard', 'soild shortening',
+        'milk', 'heavy cream', 'half and half',
+        'honey', 'maple syrup', 'molasses',
+        'rice', 'oats', 'quinoa',
+        'vegetable oil', 'olive oil',
+        'baking soda', 'baking powder',
+        'table salt', 'cocoa powder'
+    ]
 ]
-const CONVERSION_KEYS = {
+export const CONVERSION_KEYS = {
     M_TSP: 0, TSP: 10, TBSP: 20, FL_OZ: 30,
     CUP: 40, PINT: 50, QUART: 60, GALLON: 70,
     ML: 1, L: 11,
     OZ: 2, LB: 12,
     MG: 3, G: 13, KG: 23
 }
-const volumeIds = [
+//may use this instead
+export const densities = {
+    'water': 100,
+    'all-purpose flour': 530, 'bread flour': 570, 'cake flour': 430,
+    'granulated sugar': 850, 'brown sugar': 720, 'powder sugar': 560,
+    'butter': 910, 'lard': 920, 'soild shortening': 920,
+    'milk': 1030, 'heavy cream': 1010, 'half and half': 1020,
+    'honey': 1420, 'maple syrup': 1370, 'molasses': 1400,
+    'rice': 750, 'oats': 410, 'quinoa': 680,
+    'vegetable oil': 920, 'olive oil': 920,
+    'baking soda': 870, 'baking powder': 900,
+    'table salt': 1220, 'cocoa powder': 590
+}
+//seprate keys for density ids
+export const DENSITY_KEYS = {
+    WATER: 4,
+    FLOUR: 14, BREAD_FLOUR: 24, CAKE_FLOUR: 34,
+    SUGAR: 44, BROWN_SUGAR: 54, POWDER_SUGAR: 64,
+    BUTTER: 74, LARD: 84, SHORTENING: 94,
+    MILK: 104, HEAVY_CREAM: 114, HALF_AND_HALF: 124,
+    HONEY: 134, SYRUP: 144, MOLASSES: 154,
+    RICE: 164, OATS: 174, QUINOA: 184,
+    VEG_OIL: 194, OLIVE_OIL: 204,
+    BAKING_SODA: 214, BAKING_POWDER: 224,
+    SALT: 234, COCOA: 244
+
+}
+export const TYPE_KEYS = {
+    IMP_VOLUME: 0, MET_VOLUME: 1, IMP_MASS: 2, MET_MASS: 3, DENSITY: 4
+}
+export const volumeIds = [
     CONVERSION_KEYS.ML, CONVERSION_KEYS.L,
     CONVERSION_KEYS.M_TSP, CONVERSION_KEYS.TSP, CONVERSION_KEYS.TBSP, CONVERSION_KEYS.FL_OZ,
     CONVERSION_KEYS.CUP, CONVERSION_KEYS.PINT, CONVERSION_KEYS.QUART, CONVERSION_KEYS.GALLON
 ];
-const massIds = [
+export const massIds = [
     CONVERSION_KEYS.MG, CONVERSION_KEYS.G, CONVERSION_KEYS.KG,
     CONVERSION_KEYS.OZ, CONVERSION_KEYS.LB
 ]
-const allIds = [
+export const allIds = [
     ...volumeIds,
     ...massIds
 ]
-function getIndex(id = 0) {
+export function getIndex(id = 0) {
     return Math.floor(id / 10)
 }
-function getType(id = 0) {
+export function getType(id = 0) {
     return id % 10
 }
-function getConversionValue(id = 0) {
+export function getConversionValue(id = 0) {
     return conversionTable[getType(id)][getIndex(id)] || 1
 }
-function getConversionName(id = 0) {
+export function getConversionName(id = 0) {
     return conversionNames[getType(id)][getIndex(id)] || 1
 }
 
-function impToMetVolume(value) {
+export function impToMetVolume(value) {
     return value * 0.308057599
 }
-function metToImpVolume(value) {
+export function metToImpVolume(value) {
     return value / 0.308057599
 }
-function impToMetMass(value) {
+export function impToMetMass(value) {
     return value * 28349.5231
 }
-function metToImpMass(value) {
+export function metToImpMass(value) {
     return value * 0.00003527
 }
-function convert(value = 1, fromId = 0, toId = 0, modifier = 1) {
+export function convert(value = 1, fromId = 0, toId = 0, modifier = 1) {
     const fromType = getType(fromId)
     const toType = getType(toId)
     //note: -1 is due to the first index(0) being used of type conversion
@@ -70,6 +124,29 @@ function convert(value = 1, fromId = 0, toId = 0, modifier = 1) {
             value = fromType < toType ? impToMetMass(value) : metToImpMass(value);
         }
         else {
+            console.log(fromType, toType)
+            //convert to metric for density
+            if (fromType === 0 && (toType === 2 || toType === 3)) {
+                console.log(modifier)
+                value = impToMetVolume(value) * modifier;
+
+            }
+            else if (fromType === 2 && (toType === 0 || toType === 1)) {
+                console.log(modifier)
+                value = impToMetMass(value) / modifier;
+
+            }
+            value = fromType < toType ? value * modifier : value / modifier;
+            if (toType === 0) {
+                value = metToImpVolume(value)
+            }
+            else if (toType === 2) {
+                value = metToImpMass(value)
+            }
+
+            //apply density base
+            //then convert to imp IF to is imp 
+
             console.log('NOTE: density conversion logic needed. ')
             //may need to convert to met if imp (case 1 and 2) and then apply the desity value(gain from modifier)
         }
@@ -110,6 +187,8 @@ export class RecipeConversion {
         this.#requestUpdate = true
         requestAnimationFrame(() => this.update(this));
     }
+
+    densitiesDatalistId = 'RC_densitiesDatalist'
 
     //defualt style classes are the default style and could be disable on init
     defaultBodyClass = 'RC_defaultBody'
@@ -212,7 +291,7 @@ export class RecipeConversion {
             outputLabelElement.innerText = inputLabelElement.value
         });
 
-        elements.push(this.addElement('input', input, { name: 'Value', title: "Value" }, [this.defaultNumberClass, this.inputValueClass]))
+        elements.push(this.addElement('input', input, { name: 'Value', title: "Value", placeholder: 'Amount' }, [this.defaultNumberClass, this.inputValueClass]))
         const inputValueElement = elements.at(-1)
         elements.push(this.addElement('span', output, { innerText: inputValueElement.value }, [this.defaultNumberClass, this.styles.outputValueClass]))
         const outputValueElement = elements.at(-1)
@@ -224,7 +303,8 @@ export class RecipeConversion {
         let inputFromElement
         let inputToElement
         let outputValueTypeElement
-        if (type === 1) {
+        let inputDensityElement
+        if (type === 1 || type === 2) {
             elements.push(this.addElement('select', input, { name: 'From', title: "From" }, [this.defaultItemClass, this.styles.inputFromClass]))
             inputFromElement = elements.at(-1)
             inputFromElement.addEventListener('change', (event, handler = this) => {
@@ -257,6 +337,39 @@ export class RecipeConversion {
                 //});
             }
         }
+        if (type === 2) {
+            elements.push(this.addElement('input', input, { name: 'Density', title: "Density", placeholder: 'Density' }, [this.defaultItemClass, this.styles.inputDensityClass]))
+            inputDensityElement = elements.at(-1)
+            inputDensityElement.setAttribute("list", this.densitiesDatalistId);
+            inputDensityElement.addEventListener('change', (event, handler = this) => {
+                handler.requestUpdate()
+            });
+            //NOTE: below is for the dynamic added input to display the density values as a title
+            //if it a valid entry.
+            inputDensityElement.addEventListener("input", function () {
+                const value = this.value.trim();
+                if (densities.hasOwnProperty(value)) {
+                    this.title = `Density: ${densities[value]} mg/ml`;
+                } else {
+
+                    let newValue = parseFloat(value);
+                    if (!Number.isFinite(newValue) || newValue <= 0) {
+                        newValue = '';
+                        this.title = "Select or input density. Currently using 1000 mg/ml";
+                    }
+                    else {
+                        this.title = "Custom density.";
+                    }
+                    this.value = newValue;
+                }
+            });
+            inputDensityElement.addEventListener("mousedown", function () {
+                let value = parseFloat(this.value)
+                if(this.value && (!Number.isFinite(value) || value <= 0)){
+                    this.value = ''
+                }
+            })
+        }
 
 
         const onValueChange = () => {
@@ -277,6 +390,16 @@ export class RecipeConversion {
                 //might just use an int and split into two componets. type and index. so if type is diffrent, will do the conversion on the type table untill in correct scope
                 //and then use the conversion table
                 outputValueElement.innerText = convert(inputValueElement.value, inputFromElement.value, inputToElement.value) * this.multiplier
+                outputValueTypeElement.innerText = getConversionName(inputToElement.value)
+                return
+            }
+            if (type === 2) {
+                outputValueElement.innerText = convert(
+                    inputValueElement.value,
+                    inputFromElement.value,
+                    inputToElement.value,
+                    densities[inputDensityElement.value] ? densities[inputDensityElement.value] : inputDensityElement.value || 1000
+                ) * this.multiplier
                 outputValueTypeElement.innerText = getConversionName(inputToElement.value)
                 return
             }
@@ -311,7 +434,8 @@ export class RecipeConversion {
             this.lowerInfo,
             this.defaultStyleElement,
             this.titleInputBox,
-            this.body
+            this.body,
+            this.densitiesDatalist
         ])
     }
     init(element_id = '', styles = {}, createDefaultStyle = true) {
@@ -321,6 +445,22 @@ export class RecipeConversion {
         if (createDefaultStyle) {
             this.createDefaultStyle()
         }
+        //data list for densities
+        this.densitiesDatalist = document.createElement("datalist");
+        if (!this.densitiesDatalistId) {
+            //need an id, but may need to make the name less likly to be used
+            this.densitiesDatalistId = 'RC_densitiesDatalist_defaultNULL'
+        }
+        this.densitiesDatalist.id = this.densitiesDatalistId
+        Object.entries(densities).forEach(([key, value]) => {
+            const option = document.createElement("option");
+            option.value = key;
+            this.densitiesDatalist.appendChild(option);
+        });
+        document.body.appendChild(this.densitiesDatalist);
+
+
+
         //this.defaultRowClass
         this.body = this.addElement('div', this.container, {}, [this.defaultBodyClass, styles.bodyClass])
         this.titleInputBox = this.addElement('div', this.body, {}, [this.defaultRowClass, styles.titleInputBoxClass])
@@ -431,7 +571,7 @@ export class RecipeConversion {
                     this.createItem(1, volumeIds, volumeIds)
                     break;
                 case "all":
-                    this.createItem(1, allIds, allIds)
+                    this.createItem(2, allIds, allIds)
                     break;
                 default:
                     if (handler.debug) { console.log("Unknown selection.") }
