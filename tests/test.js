@@ -1,160 +1,5 @@
-export const conversionTable = [
-    [1, 16, 48, 96, 768, 1536, 3072, 12288],//spoons and cups using 1/16 of a tsp as the base
-    [1, 1000],//liters using ml as the base
-    [1, 16],
-    [1, 1000, 1000000],
-    [
-        1000,
-        530, 570, 430,
-        850, 720, 560,
-        910, 920, 910,
-        1030, 1010, 1020,
-        1420, 1370, 1400,
-        750, 410, 680,
-        920, 920,
-        870, 900,
-        1220, 590,
-    ]//in mg/ml
-]
-export const conversionNames = [
-    ['1/16 tsp', 'tsp', 'tbsp', 'fl oz', 'cup', 'pint', 'quart', 'gallon'],
-    ['ml', 'litters'],
-    ['oz', 'lb'],
-    ['mg', 'g', 'kg'],
-    [
-        'water',
-        'all-purpose flour', 'bread flour', 'cake flour',
-        'granulated sugar', 'brown sugar', 'powder sugar',
-        'butter', 'lard', 'soild shortening',
-        'milk', 'heavy cream', 'half and half',
-        'honey', 'maple syrup', 'molasses',
-        'rice', 'oats', 'quinoa',
-        'vegetable oil', 'olive oil',
-        'baking soda', 'baking powder',
-        'table salt', 'cocoa powder'
-    ]
-]
-export const CONVERSION_KEYS = {
-    M_TSP: 0, TSP: 10, TBSP: 20, FL_OZ: 30,
-    CUP: 40, PINT: 50, QUART: 60, GALLON: 70,
-    ML: 1, L: 11,
-    OZ: 2, LB: 12,
-    MG: 3, G: 13, KG: 23
-}
-//may use this instead
-export const densities = {
-    'water': 100,
-    'all-purpose flour': 530, 'bread flour': 570, 'cake flour': 430,
-    'granulated sugar': 850, 'brown sugar': 720, 'powder sugar': 560,
-    'butter': 910, 'lard': 920, 'soild shortening': 920,
-    'milk': 1030, 'heavy cream': 1010, 'half and half': 1020,
-    'honey': 1420, 'maple syrup': 1370, 'molasses': 1400,
-    'rice': 750, 'oats': 410, 'quinoa': 680,
-    'vegetable oil': 920, 'olive oil': 920,
-    'baking soda': 870, 'baking powder': 900,
-    'table salt': 1220, 'cocoa powder': 590
-}
-//seprate keys for density ids
-export const DENSITY_KEYS = {
-    WATER: 4,
-    FLOUR: 14, BREAD_FLOUR: 24, CAKE_FLOUR: 34,
-    SUGAR: 44, BROWN_SUGAR: 54, POWDER_SUGAR: 64,
-    BUTTER: 74, LARD: 84, SHORTENING: 94,
-    MILK: 104, HEAVY_CREAM: 114, HALF_AND_HALF: 124,
-    HONEY: 134, SYRUP: 144, MOLASSES: 154,
-    RICE: 164, OATS: 174, QUINOA: 184,
-    VEG_OIL: 194, OLIVE_OIL: 204,
-    BAKING_SODA: 214, BAKING_POWDER: 224,
-    SALT: 234, COCOA: 244
-
-}
-export const TYPE_KEYS = {
-    IMP_VOLUME: 0, MET_VOLUME: 1, IMP_MASS: 2, MET_MASS: 3, DENSITY: 4
-}
-export const volumeIds = [
-    CONVERSION_KEYS.ML, CONVERSION_KEYS.L,
-    CONVERSION_KEYS.M_TSP, CONVERSION_KEYS.TSP, CONVERSION_KEYS.TBSP, CONVERSION_KEYS.FL_OZ,
-    CONVERSION_KEYS.CUP, CONVERSION_KEYS.PINT, CONVERSION_KEYS.QUART, CONVERSION_KEYS.GALLON
-];
-export const massIds = [
-    CONVERSION_KEYS.MG, CONVERSION_KEYS.G, CONVERSION_KEYS.KG,
-    CONVERSION_KEYS.OZ, CONVERSION_KEYS.LB
-]
-export const allIds = [
-    ...volumeIds,
-    ...massIds
-]
-export function getIndex(id = 0) {
-    return Math.floor(id / 10)
-}
-export function getType(id = 0) {
-    return id % 10
-}
-export function getConversionValue(id = 0) {
-    return conversionTable[getType(id)][getIndex(id)] || 1
-}
-export function getConversionName(id = 0) {
-    return conversionNames[getType(id)][getIndex(id)] || 1
-}
-
-export function impToMetVolume(value) {
-    return value * 0.308057599
-}
-export function metToImpVolume(value) {
-    return value / 0.308057599
-}
-export function impToMetMass(value) {
-    return value * 28349.5231
-}
-export function metToImpMass(value) {
-    return value * 0.00003527
-}
-export function convert(value = 1, fromId = 0, toId = 0, modifier = 1) {
-    const fromType = getType(fromId)
-    const toType = getType(toId)
-    //note: -1 is due to the first index(0) being used of type conversion
-    //can change to -2 and insert mass densities to index 1. note: this would
-    //mean all types would need be increased by one
-    value *= getConversionValue(fromId)
-    if (fromType !== toType) {
-        if ((fromType === 0 || fromType === 1) && (toType === 0 || toType === 1)) {
-            value = fromType < toType ? impToMetVolume(value) : metToImpVolume(value);
-        }
-        else if ((fromType === 2 || fromType === 3) && (toType === 2 || toType === 3)) {
-            value = fromType < toType ? impToMetMass(value) : metToImpMass(value);
-        }
-        else {
-            console.log(fromType, toType)
-            //convert to metric for density
-            if (fromType === 0 && (toType === 2 || toType === 3)) {
-                console.log(modifier)
-                value = impToMetVolume(value) * modifier;
-
-            }
-            else if (fromType === 2 && (toType === 0 || toType === 1)) {
-                console.log(modifier)
-                value = impToMetMass(value) / modifier;
-
-            }
-            value = fromType < toType ? value * modifier : value / modifier;
-            if (toType === 0) {
-                value = metToImpVolume(value)
-            }
-            else if (toType === 2) {
-                value = metToImpMass(value)
-            }
-
-            //apply density base
-            //then convert to imp IF to is imp 
-
-            console.log('NOTE: density conversion logic needed. ')
-            //may need to convert to met if imp (case 1 and 2) and then apply the desity value(gain from modifier)
-        }
-    }
-
-    value /= getConversionValue(toId)
-    return value
-}
+import { convert, getConversionName, densities, volumeIds, massIds, allIds } from './culinary_conversions.js';
+import { createElement, removeElements } from './create_html_element.js'
 
 export class RecipeConversion {
     container
@@ -241,41 +86,17 @@ export class RecipeConversion {
         document.head.appendChild(this.defaultStyleElement);
     }
 
-    removeElements(elements = []) {
-        for (let element of elements) {
-            if (element) {
-                element.remove()
-            }
-        }
-        //this is to be used as a callable. items should be a cache array of the items in question instead of have two remove (one for an item and another for two items)
-        //NOTE: on change and update results may be created inside the add functions due to each case handling it diffrently
-    }
-
-    addElement(type = 'div', parent = document.body, properties = {}, cssClasses = []) {
-        const element = document.createElement(type)
-        Object.assign(element, properties);
-        for (let cssClass of cssClasses) {
-            if (cssClass) {
-                element.classList.add(cssClass)
-            }
-        }
-        if (parent) {
-            parent.appendChild(element)
-        }
-        return element
-    }
-
     //this handles the basic item layout without dealing with select types
     //(the dedicated item types will handle that)
     createItem(type = 0, fromTable = allIds, toTable = undefined) {
         const item = { elements: [] }
         const elements = item.elements
-        elements.push(this.addElement('div', this.inputBox, {}, [this.defaultRowClass]))
+        elements.push(createElement('div', this.inputBox, {}, [this.defaultRowClass]))
         const input = elements.at(-1)
-        elements.push(this.addElement('div', this.outputBox, {}, [this.defaultRowClass]))
+        elements.push(createElement('div', this.outputBox, {}, [this.defaultRowClass]))
         const output = elements.at(-1)
 
-        elements.push(this.addElement(
+        elements.push(createElement(
             'input',
             input,
             {
@@ -285,15 +106,15 @@ export class RecipeConversion {
             },
             [this.defaultTextClass, this.styles.inputLabelClass]))
         const inputLabelElement = elements.at(-1)
-        elements.push(this.addElement('span', output, { innerText: inputLabelElement.value }, [this.defaultTextClass, this.styles.outputLabelClass]))
+        elements.push(createElement('span', output, { innerText: inputLabelElement.value }, [this.defaultTextClass, this.styles.outputLabelClass]))
         const outputLabelElement = elements.at(-1)
         inputLabelElement.addEventListener('change', () => {
             outputLabelElement.innerText = inputLabelElement.value
         });
 
-        elements.push(this.addElement('input', input, { name: 'Value', title: "Value", placeholder: 'Amount' }, [this.defaultNumberClass, this.inputValueClass]))
+        elements.push(createElement('input', input, { name: 'Value', title: "Value", placeholder: 'Amount' }, [this.defaultNumberClass, this.inputValueClass]))
         const inputValueElement = elements.at(-1)
-        elements.push(this.addElement('span', output, { innerText: inputValueElement.value }, [this.defaultNumberClass, this.styles.outputValueClass]))
+        elements.push(createElement('span', output, { innerText: inputValueElement.value }, [this.defaultNumberClass, this.styles.outputValueClass]))
         const outputValueElement = elements.at(-1)
         inputValueElement.addEventListener('change', (event, handler = this) => {
             //outputValueElement.innerText = onValueChange(inputValueElement.value)
@@ -305,40 +126,40 @@ export class RecipeConversion {
         let outputValueTypeElement
         let inputDensityElement
         if (type === 1 || type === 2) {
-            elements.push(this.addElement('select', input, { name: 'From', title: "From" }, [this.defaultItemClass, this.styles.inputFromClass]))
+            elements.push(createElement('select', input, { name: 'From', title: "From" }, [this.defaultItemClass, this.styles.inputFromClass]))
             inputFromElement = elements.at(-1)
             inputFromElement.addEventListener('change', (event, handler = this) => {
                 handler.requestUpdate()
             });
-            elements.push(this.addElement('select', input, { name: 'To', title: "To" }, [this.defaultItemClass, this.styles.inputToClass]))
+            elements.push(createElement('select', input, { name: 'To', title: "To" }, [this.defaultItemClass, this.styles.inputToClass]))
             inputToElement = elements.at(-1)
             inputToElement.addEventListener('change', (event, handler = this) => {
                 handler.requestUpdate()
             });
 
-            elements.push(this.addElement('span', output, {}, [this.defaultTextlass, this.styles.outputValueTypeClass]))
+            elements.push(createElement('span', output, {}, [this.defaultTextlass, this.styles.outputValueTypeClass]))
             outputValueTypeElement = elements.at(-1)
 
 
             if (fromTable) {
                 for (const id of fromTable) {
-                    elements.push(this.addElement('option', inputFromElement, { value: id || 0, textContent: getConversionName(id) }))
+                    elements.push(createElement('option', inputFromElement, { value: id || 0, textContent: getConversionName(id) }))
                 }
                 //Object.keys(fromTable).forEach(key => {
-                //    elements.push(this.addElement('option', inputFromElement, { value: fromTable[key] || 0, textContent: key }))
+                //    elements.push(createElement('option', inputFromElement, { value: fromTable[key] || 0, textContent: key }))
                 //});
             }
             if (toTable) {
                 for (const id of toTable) {
-                    elements.push(this.addElement('option', inputToElement, { value: id || 0, textContent: getConversionName(id) }))
+                    elements.push(createElement('option', inputToElement, { value: id || 0, textContent: getConversionName(id) }))
                 }
                 //Object.keys(toTable).forEach(key => {
-                //    elements.push(this.addElement('option', inputToElement, { value: toTable[key] || 0, textContent: key }))
+                //    elements.push(createElement('option', inputToElement, { value: toTable[key] || 0, textContent: key }))
                 //});
             }
         }
         if (type === 2) {
-            elements.push(this.addElement('input', input, { name: 'Density', title: "Density", placeholder: 'Density' }, [this.defaultItemClass, this.styles.inputDensityClass]))
+            elements.push(createElement('input', input, { name: 'Density', title: "Density", placeholder: 'Density' }, [this.defaultItemClass, this.styles.inputDensityClass]))
             inputDensityElement = elements.at(-1)
             inputDensityElement.setAttribute("list", this.densitiesDatalistId);
             inputDensityElement.addEventListener('change', (event, handler = this) => {
@@ -365,7 +186,7 @@ export class RecipeConversion {
             });
             inputDensityElement.addEventListener("mousedown", function () {
                 let value = parseFloat(this.value)
-                if(this.value && (!Number.isFinite(value) || value <= 0)){
+                if (this.value && (!Number.isFinite(value) || value <= 0)) {
                     this.value = ''
                 }
             })
@@ -407,10 +228,10 @@ export class RecipeConversion {
         }
         this.updateSignals.add(onValueChange)
 
-        elements.push(this.addElement('button', input, { innerHTML: 'x', title: "Remove" }, [this.defaultItemClass, this.styles.removeButtonClass]))
+        elements.push(createElement('button', input, { innerHTML: 'x', title: "Remove" }, [this.defaultItemClass, this.styles.removeButtonClass]))
         elements.at(-1).addEventListener('click', (event, handler = this) => {
             this.updateSignals.delete(onValueChange)
-            handler.removeElements(elements)
+            removeElements(elements)
             item.elements.length = 0;
             if (item.updateValue) { delete item.updateValue }
         });
@@ -421,7 +242,7 @@ export class RecipeConversion {
 
     //Note: add conv also add results. also the remove callable should remove the conv and results so there no reason to keep track of them
     remove() {
-        this.removeElements([
+        removeElements([
             this.titleInput,
             this.upperInfoInput,
             this.lowerInfoInput,
@@ -462,9 +283,9 @@ export class RecipeConversion {
 
 
         //this.defaultRowClass
-        this.body = this.addElement('div', this.container, {}, [this.defaultBodyClass, styles.bodyClass])
-        this.titleInputBox = this.addElement('div', this.body, {}, [this.defaultRowClass, styles.titleInputBoxClass])
-        this.titleInput = this.addElement(
+        this.body = createElement('div', this.container, {}, [this.defaultBodyClass, styles.bodyClass])
+        this.titleInputBox = createElement('div', this.body, {}, [this.defaultRowClass, styles.titleInputBoxClass])
+        this.titleInput = createElement(
             'input',
             this.titleInputBox,
             {
@@ -478,7 +299,7 @@ export class RecipeConversion {
         this.titleInput.addEventListener('change', (event, handler = this) => {
             handler.title.innerText = event.target.value
         })
-        this.upperInfoInput = this.addElement(
+        this.upperInfoInput = createElement(
             'textarea',
             this.body,
             {
@@ -492,7 +313,7 @@ export class RecipeConversion {
             handler.upperInfo.innerText = event.target.value
         })
 
-        this.multiplierInput = this.addElement(
+        this.multiplierInput = createElement(
             'input',
             this.titleInputBox,
             {
@@ -518,40 +339,40 @@ export class RecipeConversion {
         });
 
         //this.inputBox = document.createElement("div");
-        this.inputBox = this.addElement('div', this.body, {}, [this.defaultContainerClass, styles.inputBoxClass])
+        this.inputBox = createElement('div', this.body, {}, [this.defaultContainerClass, styles.inputBoxClass])
 
 
-        this.addItemSelection = this.addElement(
+        this.addItemSelection = createElement(
             'select',
             this.body,
             { name: "Add item selection" },
             [this.defaultItemClass, styles.addItemSelectionClass]
         )
-        this.addElement('option', this.addItemSelection,
+        createElement('option', this.addItemSelection,
             {
                 value: '',
                 textContent: 'select an field to create'
             }
         )
-        this.addElement('option', this.addItemSelection,
+        createElement('option', this.addItemSelection,
             {
                 value: 'field',
                 textContent: 'A standard field'
             }
         )
-        this.addElement('option', this.addItemSelection,
+        createElement('option', this.addItemSelection,
             {
                 value: 'mass',
                 textContent: 'Mass conversion'
             }
         )
-        this.addElement('option', this.addItemSelection,
+        createElement('option', this.addItemSelection,
             {
                 value: 'volume',
                 textContent: 'volume conversion'
             }
         )
-        this.addElement('option', this.addItemSelection,
+        createElement('option', this.addItemSelection,
             {
                 value: 'all',
                 textContent: 'All conversion'
@@ -581,7 +402,7 @@ export class RecipeConversion {
 
         });
 
-        this.lowerInfoInput = this.addElement(
+        this.lowerInfoInput = createElement(
             'textarea',
             this.body,
             {
@@ -598,12 +419,12 @@ export class RecipeConversion {
 
 
 
-        this.title = this.addElement('p', this.body, {}, [this.defaultRowClass, styles.titleClass])
-        this.upperInfo = this.addElement('p', this.body, {}, [this.defaultRowClass, styles.upperInfoClass])
+        this.title = createElement('p', this.body, {}, [this.defaultRowClass, styles.titleClass])
+        this.upperInfo = createElement('p', this.body, {}, [this.defaultRowClass, styles.upperInfoClass])
 
-        this.outputBox = this.addElement('div', this.body, {}, [this.defaultContainerClass, styles.outputBoxClass])
+        this.outputBox = createElement('div', this.body, {}, [this.defaultContainerClass, styles.outputBoxClass])
 
-        this.lowerInfo = this.addElement('p', this.body, {}, [this.defaultRowClass, styles.lowerInfoClass])
+        this.lowerInfo = createElement('p', this.body, {}, [this.defaultRowClass, styles.lowerInfoClass])
 
     }
 }
