@@ -1,80 +1,16 @@
 <link rel="stylesheet" href="test.css">
 
-<div class="main" hidden>
-    <div class="container" style="position: absolute; top: 10%; left: 10%;">
-        container
-        <div class="headItem">
-            <label title="Multiplier for the below entries"> Multiplier:
-                <input type="number" min="0" value="1" class="conversionMulti" name="conversionMulti"
-                    style="width: 64px;">
-            </label>
-        </div>
-        <div class="item">
-            <label title="Conversion value">value:
-                <input type="number" min="0" value="0" class="conversionValue" name="conversionValue"
-                    style="width: 64px;">
-            </label>
-            <label title="Conversion from">from
-                <select class="conversionFrom" name="conversionFrom">
-                    <option value=1>tsp</option>
-                    <option value=2>tbsp</option>
-                    <option value=3>cup</option>
-                    <option value=4>pint</option>
-                    <option value=5>quart</option>
-                </select>
-            </label>
-            <label title="Conversion to">to
-                <select class="conversionTo" name="conversionTo">
-                    <option value=1>tsp</option>
-                    <option value=2>tbsp</option>
-                    <option value=3>cup</option>
-                    <option value=4>pint</option>
-                    <option value=5>quart</option>
-                </select>
-            </label>
-            <label title="Conversion result">result:
-                <input type="number" min="0" value="0" class="conversionResult" name="conversionResult"
-                    style="width: 64px;">
-            </label>
-        </div>
-        <div class="item">
-            <label title="Conversion value">value:
-                <input type="number" min="0" value="0" class="conversionValue" name="conversionValue"
-                    style="width: 64px;">
-            </label>
-            <label title="Conversion from">from
-                <select class="conversionFrom" name="conversionFrom">
-                    <option value=1>tsp</option>
-                    <option value=2>tbsp</option>
-                    <option value=3>cup</option>
-                    <option value=4>pint</option>
-                    <option value=5>quart</option>
-                </select>
-            </label>
-            <label title="Conversion to">to
-                <select class="conversionTo" name="conversionTo">
-                    <option value=1>tsp</option>
-                    <option value=2>tbsp</option>
-                    <option value=3>cup</option>
-                    <option value=4>pint</option>
-                    <option value=5>quart</option>
-                </select>
-            </label>
-            <label title="Conversion result">result:
-                <input type="number" min="0" value="0" class="conversionResult" name="conversionResult"
-                    style="width: 64px;">
-            </label>
-        </div>
-    </div>
 
-</div>
-<script type="module" src="test.js"></script>
+
 <script type="module">
     import { RecipeConversion } from './test.js'
+    import { convertMarkdownElement, toHtml } from './markdown.js'
+    import { parseInlineFunc } from './inline_func_parser.js'
     const testWidget = new RecipeConversion()
     const testContainer = document.createElement("div");
     testContainer.classList.add('testContainer')
     testContainer.id = 'testContainer'
     document.body.appendChild(testContainer);
     testWidget.init('testContainer')
+
 </script>

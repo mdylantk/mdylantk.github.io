@@ -1,5 +1,21 @@
 import { convert, getConversionName, densities, volumeIds, massIds, allIds } from './culinary_conversions.js';
 import { createElement, removeElements } from './create_html_element.js'
+import { convertMarkdownElement, toHtml } from './markdown.js'
+import { parseInlineFunc, calc } from './inline_func_parser.js'
+
+function textProcessing(text) {
+    text = parseInlineFunc(text)
+    text = toHtml(text);
+    return text
+}
+function numberProcessing(exp) {
+    console.log([exp, calc(exp)])
+    exp = Number(calc(exp))
+    if (!Number.isNaN(exp)){
+        return exp
+    }
+    return 0
+}
 
 export class RecipeConversion {
     container
@@ -109,7 +125,7 @@ export class RecipeConversion {
         elements.push(createElement('span', output, { innerText: inputLabelElement.value }, [this.defaultTextClass, this.styles.outputLabelClass]))
         const outputLabelElement = elements.at(-1)
         inputLabelElement.addEventListener('change', () => {
-            outputLabelElement.innerText = inputLabelElement.value
+            outputLabelElement.innerHTML = textProcessing(inputLabelElement.value)
         });
 
         elements.push(createElement('input', input, { name: 'Value', title: "Value", placeholder: 'Amount' }, [this.defaultNumberClass, this.inputValueClass]))
@@ -118,6 +134,7 @@ export class RecipeConversion {
         const outputValueElement = elements.at(-1)
         inputValueElement.addEventListener('change', (event, handler = this) => {
             //outputValueElement.innerText = onValueChange(inputValueElement.value)
+            event.target.value = numberProcessing(event.target.value);
             handler.requestUpdate()
         });
 
@@ -137,7 +154,7 @@ export class RecipeConversion {
                 handler.requestUpdate()
             });
 
-            elements.push(createElement('span', output, {}, [this.defaultTextlass, this.styles.outputValueTypeClass]))
+            elements.push(createElement('span', output, {}, [this.defaultTextClass, this.styles.outputValueTypeClass]))
             outputValueTypeElement = elements.at(-1)
 
 
@@ -297,7 +314,7 @@ export class RecipeConversion {
             [this.defaultTextClass, styles.titleInputClass]
         )
         this.titleInput.addEventListener('change', (event, handler = this) => {
-            handler.title.innerText = event.target.value
+            handler.title.innerHTML = textProcessing(event.target.value)
         })
         this.upperInfoInput = createElement(
             'textarea',
@@ -310,14 +327,14 @@ export class RecipeConversion {
             [this.defaultRowClass, styles.upperInfoInputClass]
         )
         this.upperInfoInput.addEventListener('change', (event, handler = this) => {
-            handler.upperInfo.innerText = event.target.value
+            handler.upperInfo.innerHTML = textProcessing(event.target.value)
         })
 
         this.multiplierInput = createElement(
             'input',
             this.titleInputBox,
             {
-                type: 'number',
+                
                 name: 'Multiplier',
                 min: Number.MIN_VALUE,
                 value: 1,
@@ -325,9 +342,11 @@ export class RecipeConversion {
             },
             [this.defaultNumberClass, styles.multiplierInputClass]
         )
-
         this.multiplierInput.addEventListener('change', (event, handler = this) => {
-            const value = Number(event.target.value);
+            const value = numberProcessing(event.target.value);
+            if (event.target.value != value){
+                event.target.value = value;
+            }
             handler.multiplier = value;
             if (handler.multiplier != value) {
                 event.target.value = handler.multiplier
@@ -413,7 +432,7 @@ export class RecipeConversion {
             [this.defaultRowClass, styles.lowerInfoInputClass]
         )
         this.lowerInfoInput.addEventListener('change', (event, handler = this) => {
-            handler.lowerInfo.innerText = event.target.value
+            handler.lowerInfo.innerHTML = textProcessing(event.target.value)
         })
 
 

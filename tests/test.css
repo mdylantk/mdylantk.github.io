@@ -5,6 +5,29 @@
         max-width: 100%;
         aspect-ratio: 1600 / 1200;
     }
-    .testContainer{
+
+    .testContainer {
         width: 720px;
+    }
+
+
+    blockquote {
+        color: azure;
+        background: rgb(104, 169, 248);
+        padding: 2px 6px;
+        border-radius: 6px;
+    }
+
+    code {
+        color: azure;
+        background: rgb(104, 169, 248);
+        padding: 2px 6px;
+        border-radius: 6px;
+    }
+
+    table {
+        color: azure;
+        background: rgb(104, 169, 248);
+        padding: 2px 6px;
+        border-radius: 6px;
     }
