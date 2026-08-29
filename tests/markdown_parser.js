@@ -45,9 +45,15 @@ function renderTable(lines) {
   return html;
 }
 
+//planing to rename the to html function
+export function markdownToHtml(src){
+  return toHtml(src)
+}
+
 export function toHtml(src) {
   if (!src || !src.trim()) {
-    return '<p class="md-empty">Your rendered markdown will show up here…</p>';
+    return '';
+  //  return '<p class="md-empty">Your rendered markdown will show up here…</p>';
   }
 
   const rawLines = src.replace(/\r\n/g, '\n').split('\n');
@@ -154,23 +160,4 @@ export function toHtml(src) {
   }
 
   return out.join('\n');
-}
-
-//Note: only use this if markdown the only thing that needs to be parced
-//else recreate it
-export function registerMarkdownInput(source, target) {
-  if (!source || !target) return;
-  source.addEventListener('input', () => {
-    target.innerHTML = toHtml(source.value);
-  });
-}
-//The will convert the innerHTML of the source to markdown
-//or the target if one is provided. (note: with target, it assume source is a input)
-export function convertMarkdownElement(source, target = undefined) {
-  if (!source) return;
-  if (target) {
-    target.innerHTML = toHtml(source.value);
-    return;
-  }
-  source.innerHTML = toHtml(source.innerHTML);
 }
