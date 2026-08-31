@@ -1,9 +1,10 @@
 import { convert, getConversionName, densities, volumeIds, massIds, allIds } from './culinary_conversions.js';
 import { createElement, removeElements } from './create_html_element.js'
-import { markdownToHtml } from './markdown_parser.js'
-import { parseInlineFunc } from './inline_func_parser.js'
-import { parseInlineVar } from './inline_var_parser.js'
-import { calc } from './inline_calc_parser.js'
+import { markdownToHtml } from '/lib/inline_parsers/markdown_parser.js'
+import { parseInlineFunc } from '/lib/inline_parsers/func_parser.js'
+import { parseInlineVar } from '/lib/inline_parsers/var_parser.js'
+import { calc } from '/lib/inline_parsers/calc_parser.js'
+
 
 function textProcessing(text) {
     text = parseInlineVar(text)
@@ -17,13 +18,14 @@ function numberProcessing(exp) {
     //not a solution for a large database
     exp = parseInlineVar(exp)
     exp = Number(calc(exp))
-    if (!Number.isNaN(exp)){
+    if (!Number.isNaN(exp)) {
         return exp
     }
     return 0
 }
 
 export class RecipeConversion {
+    defaultStyles = {}
     container
     #multiplier = 1
     get multiplier() {
@@ -48,6 +50,7 @@ export class RecipeConversion {
             value();
         }
         if (target.debug) { console.log('updating') }
+        console.log(this.outputBody.innerText)
     }
     requestUpdate() {
         if (this.#requestUpdate) { return }
@@ -74,33 +77,33 @@ export class RecipeConversion {
         if (typeof this.defaultStyleElement === "undefined" || this.defaultStyleElement === null) {
             this.defaultStyleElement = document.createElement('style');
         }
-        this.defaultStyleElement.type = 'text/css';
+        //this.defaultStyleElement.type = 'text/css';
 
-        // 2. Define default widget CSS
         this.defaultStyleElement.textContent = `
             .${this.defaultBodyClass} {
-                display: grid;
+                border: 1px solid #000306;
             }
             .${this.defaultContainerClass} {
-                display: grid;
+                display:block;
+                margin: 1px;
             }
             .${this.defaultRowClass} {
-                grid-column: 1 / -1;
+                display:block;
             }
             .${this.defaultItemClass} {
-                margin: 8px;
+                margin: 1px;
             }
             .${this.defaultNumberClass} {
                 width: 10%;
                 min-width: 32px;
                 max-width: 128px;
-                margin: 8px;
+                margin: 1px;
             }
             .${this.defaultTextClass} {
                 width: 25%;
                 min-width: 128px;
                 max-width: 320px;
-                margin: 8px;
+                margin: 1px;
             }
         `;
 
@@ -128,25 +131,27 @@ export class RecipeConversion {
             },
             [this.defaultTextClass, this.styles.inputLabelClass]))
         const inputLabelElement = elements.at(-1)
-        elements.push(createElement('span', output, { innerText: inputLabelElement.value }, [this.defaultTextClass, this.styles.outputLabelClass]))
-        const outputLabelElement = elements.at(-1)
-        inputLabelElement.addEventListener('change', () => {
-            outputLabelElement.innerHTML = textProcessing(inputLabelElement.value)
+        inputLabelElement.addEventListener('change', (event, handler = this) => {
+            handler.requestUpdate()
         });
 
         elements.push(createElement('input', input, { name: 'Value', title: "Value", placeholder: 'Amount' }, [this.defaultNumberClass, this.inputValueClass]))
         const inputValueElement = elements.at(-1)
-        elements.push(createElement('span', output, { innerText: inputValueElement.value }, [this.defaultNumberClass, this.styles.outputValueClass]))
-        const outputValueElement = elements.at(-1)
         inputValueElement.addEventListener('change', (event, handler = this) => {
             //outputValueElement.innerText = onValueChange(inputValueElement.value)
-            event.target.value = numberProcessing(event.target.value);
+            //number processing needed for the input box, not output
+            try {
+                event.target.value = numberProcessing(event.target.value);
+            }
+            catch (error) {
+                if (this.debug) { console.log(error) }
+                event.target.value = 0
+            }
             handler.requestUpdate()
         });
 
         let inputFromElement
         let inputToElement
-        let outputValueTypeElement
         let inputDensityElement
         if (type === 1 || type === 2) {
             elements.push(createElement('select', input, { name: 'From', title: "From" }, [this.defaultItemClass, this.styles.inputFromClass]))
@@ -159,10 +164,6 @@ export class RecipeConversion {
             inputToElement.addEventListener('change', (event, handler = this) => {
                 handler.requestUpdate()
             });
-
-            elements.push(createElement('span', output, {}, [this.defaultTextClass, this.styles.outputValueTypeClass]))
-            outputValueTypeElement = elements.at(-1)
-
 
             if (fromTable) {
                 for (const id of fromTable) {
@@ -217,37 +218,22 @@ export class RecipeConversion {
 
 
         const onValueChange = () => {
-
-            //Note: this is for conversion with same type. need a conversion value and identifier for each type conversion
-            //such as imp to metric and mass to vol.
-            //in short a conversion function may be needed that takes the keys and pull from static tables
-            //the keys in questions would need to be formated so their types can be extracted either prefix them or use
-            //a fixed int structure
-
-            if (item.updateValue) {
-                outputValueElement.innerText = item.updateValue(inputValueElement.value) * this.multiplier
-                return
-            }
+            let value = inputValueElement.value * this.multiplier
+            let measurement
             if (type === 1) {
-                //using `this` may be risky in callables, but since this is called in the class instance, then it should be fine
-                //note: table may be change to an array if names(values) to be used or kept as is and values will be replace by string id or number index 
-                //might just use an int and split into two componets. type and index. so if type is diffrent, will do the conversion on the type table untill in correct scope
-                //and then use the conversion table
-                outputValueElement.innerText = convert(inputValueElement.value, inputFromElement.value, inputToElement.value) * this.multiplier
-                outputValueTypeElement.innerText = getConversionName(inputToElement.value)
-                return
+                value = convert(inputValueElement.value, inputFromElement.value, inputToElement.value) * this.multiplier
+                measurement = getConversionName(inputToElement.value)
             }
             if (type === 2) {
-                outputValueElement.innerText = convert(
+                value = convert(
                     inputValueElement.value,
                     inputFromElement.value,
                     inputToElement.value,
                     densities[inputDensityElement.value] ? densities[inputDensityElement.value] : inputDensityElement.value || 1000
                 ) * this.multiplier
-                outputValueTypeElement.innerText = getConversionName(inputToElement.value)
-                return
+                measurement = getConversionName(inputToElement.value)
             }
-            outputValueElement.innerText = inputValueElement.value * this.multiplier
+            output.innerHTML = textProcessing(`${inputLabelElement.value} ${value} ${measurement || ''}`)
         }
         this.updateSignals.add(onValueChange)
 
@@ -262,6 +248,7 @@ export class RecipeConversion {
 
         return item
     }
+
 
     //Note: add conv also add results. also the remove callable should remove the conv and results so there no reason to keep track of them
     remove() {
@@ -278,11 +265,12 @@ export class RecipeConversion {
             this.lowerInfo,
             this.defaultStyleElement,
             this.titleInputBox,
-            this.body,
+            this.inputBody,
+            this.outputBody,
             this.densitiesDatalist
         ])
     }
-    init(element_id = '', styles = {}, createDefaultStyle = true) {
+    init(element_id = '', styles = this.defaultStyles, createDefaultStyle = true) {
         this.styles = styles
         this.container = document.getElementById(element_id) || document.body;
         //todo: should verify the element for existing componets, but this really should only be called to create it
@@ -306,8 +294,8 @@ export class RecipeConversion {
 
 
         //this.defaultRowClass
-        this.body = createElement('div', this.container, {}, [this.defaultBodyClass, styles.bodyClass])
-        this.titleInputBox = createElement('div', this.body, {}, [this.defaultRowClass, styles.titleInputBoxClass])
+        this.inputBody = createElement('div', this.container, {}, [this.defaultBodyClass, styles.inputBodyClass])
+        this.titleInputBox = createElement('div', this.inputBody, {}, [this.defaultRowClass, styles.titleInputBoxClass])
         this.titleInput = createElement(
             'input',
             this.titleInputBox,
@@ -324,7 +312,7 @@ export class RecipeConversion {
         })
         this.upperInfoInput = createElement(
             'textarea',
-            this.body,
+            this.inputBody,
             {
                 name: 'Description',
                 placeholder: 'Description',
@@ -340,7 +328,7 @@ export class RecipeConversion {
             'input',
             this.titleInputBox,
             {
-                
+
                 name: 'Multiplier',
                 min: Number.MIN_VALUE,
                 value: 1,
@@ -349,8 +337,14 @@ export class RecipeConversion {
             [this.defaultNumberClass, styles.multiplierInputClass]
         )
         this.multiplierInput.addEventListener('change', (event, handler = this) => {
-            const value = numberProcessing(event.target.value);
-            if (event.target.value != value){
+            let value = 1
+            try {
+                value = numberProcessing(event.target.value);
+            }
+            catch (error) {
+                if (this.debug) { console.log(error) }
+            }
+            if (event.target.value != value) {
                 event.target.value = value;
             }
             handler.multiplier = value;
@@ -364,12 +358,12 @@ export class RecipeConversion {
         });
 
         //this.inputBox = document.createElement("div");
-        this.inputBox = createElement('div', this.body, {}, [this.defaultContainerClass, styles.inputBoxClass])
+        this.inputBox = createElement('div', this.inputBody, {}, [this.defaultContainerClass, styles.inputBoxClass])
 
 
         this.addItemSelection = createElement(
             'select',
-            this.body,
+            this.inputBody,
             { name: "Add item selection" },
             [this.defaultItemClass, styles.addItemSelectionClass]
         )
@@ -429,7 +423,7 @@ export class RecipeConversion {
 
         this.lowerInfoInput = createElement(
             'textarea',
-            this.body,
+            this.inputBody,
             {
                 name: 'Directions',
                 placeholder: 'Directions',
@@ -444,12 +438,13 @@ export class RecipeConversion {
 
 
 
-        this.title = createElement('p', this.body, {}, [this.defaultRowClass, styles.titleClass])
-        this.upperInfo = createElement('p', this.body, {}, [this.defaultRowClass, styles.upperInfoClass])
 
-        this.outputBox = createElement('div', this.body, {}, [this.defaultContainerClass, styles.outputBoxClass])
 
-        this.lowerInfo = createElement('p', this.body, {}, [this.defaultRowClass, styles.lowerInfoClass])
+        this.outputBody = createElement('div', this.container, {}, [this.defaultBodyClass, styles.outputBodyClass])
+        this.title = createElement('p', this.outputBody, {}, [this.defaultRowClass, styles.titleClass])
+        this.upperInfo = createElement('p', this.outputBody, {}, [this.defaultRowClass, styles.upperInfoClass])
+        this.outputBox = createElement('div', this.outputBody, {}, [this.defaultContainerClass, styles.outputBoxClass])
+        this.lowerInfo = createElement('p', this.outputBody, {}, [this.defaultRowClass, styles.lowerInfoClass])
 
     }
 }

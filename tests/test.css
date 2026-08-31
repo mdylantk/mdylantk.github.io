@@ -27,7 +27,70 @@
 
     table {
         color: azure;
-        background: rgb(104, 169, 248);
+        background: rgb(44, 76, 116);
         padding: 2px 6px;
         border-radius: 6px;
+        margin: 1rem 0;
+    }
+
+    thead th {
+        background-color: #cba7f5;;
+        border: 1px solid #dee2e6;
+        padding: 10px 12px;
+        text-align: left;
+        font-weight: 600;
+        color: #495057;
+    }
+
+    tbody td {
+        border: 1px solid #dee2e6;
+        padding: 10px 12px;
+        vertical-align: top;
+    }
+
+    tbody tr:nth-child(even) {
+        background-color: #cba7f5;
+    }
+
+    h1 {
+        font-size: 2em;
+        font-weight: bold;
+        margin: 0.67em 0;
+    }
+
+    h2 {
+        font-size: 1.5em;
+        font-weight: bold;
+        margin: 0.83em 0;
+    }
+
+    h3 {
+        font-size: 1.17em;
+        font-weight: bold;
+        margin: 1em 0;
+    }
+
+    p {
+        margin: 1em 0;
+    }
+
+    ul,
+    ol {
+        list-style-type: disc;
+        padding-left: 40px;
+        margin: 1em 0;
+    }
+
+    ol {
+        list-style-type: decimal;
+    }
+
+    li {
+        margin-bottom: 0.5em;
+        line-height: 1.6;
+    }
+
+    pre {
+        margin: 1em 0;
+        white-space: pre;
     }
