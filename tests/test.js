@@ -1,14 +1,14 @@
 import { convert, getConversionName, densities, volumeIds, massIds, allIds } from './culinary_conversions.js';
 import { createElement, removeElements } from './create_html_element.js'
 import { markdownToHtml } from '/lib/inline_parsers/markdown_parser.js'
-import { parseInlineFunc } from '/lib/inline_parsers/func_parser.js'
-import { parseInlineVar } from '/lib/inline_parsers/var_parser.js'
+import { parseInlineFunction } from '/lib/inline_parsers/func_parser.js'
+import { parseInlineVariable } from '/lib/inline_parsers/var_parser.js'
 import { calc } from '/lib/inline_parsers/calc_parser.js'
 
 
 function textProcessing(text) {
-    text = parseInlineVar(text)
-    text = parseInlineFunc(text)
+    text = parseInlineVariable(text)
+    text = parseInlineFunction(text)
     text = markdownToHtml(text);
     return text
 }
@@ -16,7 +16,7 @@ function numberProcessing(exp) {
     //parse the vars if some are numbers
     //note: too much var could casue issues and this
     //not a solution for a large database
-    exp = parseInlineVar(exp)
+    exp = parseInlineVariable(exp)
     exp = Number(calc(exp))
     if (!Number.isNaN(exp)) {
         return exp
