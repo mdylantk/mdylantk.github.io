@@ -5,7 +5,6 @@ import { parseInlineFunction } from '/lib/inline_parsers/func_parser.js'
 import { parseInlineVariable } from '/lib/inline_parsers/var_parser.js'
 import { calc } from '/lib/inline_parsers/calc_parser.js'
 
-
 function textProcessing(text) {
     text = parseInlineVariable(text)
     text = parseInlineFunction(text)
@@ -50,7 +49,6 @@ export class RecipeConversion {
             value();
         }
         if (target.debug) { console.log('updating') }
-        console.log(this.outputBody.innerText)
     }
     requestUpdate() {
         if (this.#requestUpdate) { return }
@@ -58,57 +56,48 @@ export class RecipeConversion {
         requestAnimationFrame(() => this.update(this));
     }
 
-    densitiesDatalistId = 'RC_densitiesDatalist'
 
-    //defualt style classes are the default style and could be disable on init
-    defaultBodyClass = 'RC_defaultBody'
-    //the default style for the containers such as the input box, and output box
-    defaultContainerClass = 'RC_defaultContainer'
-    //the default style for the container rows or Group of related items
-    defaultRowClass = 'RC_defaultRow'
-    //the default style for items, feilds, buttons, and inputs
-    defaultItemClass = 'RC_defaultItem'
-    defaultNumberClass = 'RC_defaultNumber'
-    defaultTextClass = 'RC_defaultText'
+    idenifier = "recipe-converter"
+    getLayoutHtml(idenifier = this.idenifier) {
+        //TODO: add a way to load a external layout
+        //but for now disable layout generation could be a solution
+        return `<div class='${idenifier}'>
+        
+            <div class='input body'>
+                <div class='row'>
+                    <input id='${idenifier}-input-title' name='Title' placeholder='Title' title='Title'>
+                    <input id='${idenifier}-input-multiplier' class='value-input' name='Multiplier' value=1 title='Multiplier'>
+                </div>
+                <div class='row'>
+                    <textarea id='${idenifier}-input-description' name='Description' placeholder='Description' title='Description'></textarea>
+                </div>
+                <div id='${idenifier}-input-box'>
+                </div>
+                <div class='row'>
+                    <select name="Add item selection" id='${idenifier}-add-item'>
+                        <option value="">select an field to create</option>
+                        <option value="field">A standard field</option>
+                        <option value="mass">Mass conversion</option>
+                        <option value="volume">volume conversion</option>
+                        <option value="all">All conversion</option>
+                    </select>
+                </div>  
+                <div class='row'>
+                    <textarea id='${idenifier}-input-directions' name='Directions' placeholder='Directions' title='Directions'></textarea>
+                </div>
+            </div>
 
-    //Note: each element would have a class realted to the role
-    //title, multiplier, container for the conversions, container for the results, display name, value, type, from, to, remove, add
-    createDefaultStyle() {
-        if (typeof this.defaultStyleElement === "undefined" || this.defaultStyleElement === null) {
-            this.defaultStyleElement = document.createElement('style');
-        }
-        //this.defaultStyleElement.type = 'text/css';
-
-        this.defaultStyleElement.textContent = `
-            .${this.defaultBodyClass} {
-                border: 1px solid #000306;
-            }
-            .${this.defaultContainerClass} {
-                display:block;
-                margin: 1px;
-            }
-            .${this.defaultRowClass} {
-                display:block;
-            }
-            .${this.defaultItemClass} {
-                margin: 1px;
-            }
-            .${this.defaultNumberClass} {
-                width: 10%;
-                min-width: 32px;
-                max-width: 128px;
-                margin: 1px;
-            }
-            .${this.defaultTextClass} {
-                width: 25%;
-                min-width: 128px;
-                max-width: 320px;
-                margin: 1px;
-            }
-        `;
-
-        // 3. Append style to <head> so it applies globally
-        document.head.appendChild(this.defaultStyleElement);
+            <div class='output body'>
+                <div id='${idenifier}-output-title' class='row' style="display: none;">
+                </div>
+                <div id='${idenifier}-output-description' class='row' style="display: none;">
+                </div>
+                <div id='${idenifier}-output-box'>
+                </div>
+                <div id='${idenifier}-output-directions' class='row' style="display: none;">
+                </div>
+            </div>
+        </div>`
     }
 
     //this handles the basic item layout without dealing with select types
@@ -116,9 +105,9 @@ export class RecipeConversion {
     createItem(type = 0, fromTable = allIds, toTable = undefined) {
         const item = { elements: [] }
         const elements = item.elements
-        elements.push(createElement('div', this.inputBox, {}, [this.defaultRowClass]))
+        elements.push(createElement('div', this.inputBox, {}, ['row']))
         const input = elements.at(-1)
-        elements.push(createElement('div', this.outputBox, {}, [this.defaultRowClass]))
+        elements.push(createElement('div', this.outputBox, {}, ['row']))
         const output = elements.at(-1)
 
         elements.push(createElement(
@@ -128,14 +117,13 @@ export class RecipeConversion {
                 name: 'Display Name',
                 placeholder: 'Label',
                 title: "Label"
-            },
-            [this.defaultTextClass, this.styles.inputLabelClass]))
+            }))
         const inputLabelElement = elements.at(-1)
         inputLabelElement.addEventListener('change', (event, handler = this) => {
             handler.requestUpdate()
         });
 
-        elements.push(createElement('input', input, { name: 'Value', title: "Value", placeholder: 'Amount' }, [this.defaultNumberClass, this.inputValueClass]))
+        elements.push(createElement('input', input, { name: 'Value', title: "Value", placeholder: 'Amount' }, ['value-input']))
         const inputValueElement = elements.at(-1)
         inputValueElement.addEventListener('change', (event, handler = this) => {
             //outputValueElement.innerText = onValueChange(inputValueElement.value)
@@ -154,12 +142,12 @@ export class RecipeConversion {
         let inputToElement
         let inputDensityElement
         if (type === 1 || type === 2) {
-            elements.push(createElement('select', input, { name: 'From', title: "From" }, [this.defaultItemClass, this.styles.inputFromClass]))
+            elements.push(createElement('select', input, { name: 'From', title: "From" }))
             inputFromElement = elements.at(-1)
             inputFromElement.addEventListener('change', (event, handler = this) => {
                 handler.requestUpdate()
             });
-            elements.push(createElement('select', input, { name: 'To', title: "To" }, [this.defaultItemClass, this.styles.inputToClass]))
+            elements.push(createElement('select', input, { name: 'To', title: "To" }))
             inputToElement = elements.at(-1)
             inputToElement.addEventListener('change', (event, handler = this) => {
                 handler.requestUpdate()
@@ -183,7 +171,7 @@ export class RecipeConversion {
             }
         }
         if (type === 2) {
-            elements.push(createElement('input', input, { name: 'Density', title: "Density", placeholder: 'Density' }, [this.defaultItemClass, this.styles.inputDensityClass]))
+            elements.push(createElement('input', input, { name: 'Density', title: "Density", placeholder: 'Density' }))
             inputDensityElement = elements.at(-1)
             inputDensityElement.setAttribute("list", this.densitiesDatalistId);
             inputDensityElement.addEventListener('change', (event, handler = this) => {
@@ -253,31 +241,28 @@ export class RecipeConversion {
     //Note: add conv also add results. also the remove callable should remove the conv and results so there no reason to keep track of them
     remove() {
         removeElements([
-            this.titleInput,
-            this.upperInfoInput,
-            this.lowerInfoInput,
-            this.multiplierInput,
-            this.addItemSelection,
-            this.inputBox,
-            this.outputBox,
-            this.title,
-            this.upperInfo,
-            this.lowerInfo,
-            this.defaultStyleElement,
-            this.titleInputBox,
-            this.inputBody,
-            this.outputBody,
+            //this.titleInput,
+            //this.upperInfoInput,
+            // this.lowerInfoInput,
+            // this.multiplierInput,
+            // this.addItemSelection,
+            // this.inputBox,
+            //this.outputBox,
+            //this.title,
+            //this.upperInfo,
+            //this.lowerInfo,
+            //this.defaultStyleElement,
+            //this.titleInputBox,
+            //this.inputBody,
+            //this.outputBody,
             this.densitiesDatalist
         ])
     }
-    init(element_id = '', styles = this.defaultStyles, createDefaultStyle = true) {
+    init(element_id = '', styles = this.defaultStyles) {
         this.styles = styles
         this.container = document.getElementById(element_id) || document.body;
-        //todo: should verify the element for existing componets, but this really should only be called to create it
-        if (createDefaultStyle) {
-            this.createDefaultStyle()
-        }
-        //data list for densities
+        this.container.innerHTML = `${this.getLayoutHtml()}${this.container.innerHTML}`
+
         this.densitiesDatalist = document.createElement("datalist");
         if (!this.densitiesDatalistId) {
             //need an id, but may need to make the name less likly to be used
@@ -291,51 +276,45 @@ export class RecipeConversion {
         });
         document.body.appendChild(this.densitiesDatalist);
 
+        this.titleInput = document.getElementById(`${this.idenifier}-input-title`)
+        this.titleOutput = document.getElementById(`${this.idenifier}-output-title`)
 
-
-        //this.defaultRowClass
-        this.inputBody = createElement('div', this.container, {}, [this.defaultBodyClass, styles.inputBodyClass])
-        this.titleInputBox = createElement('div', this.inputBody, {}, [this.defaultRowClass, styles.titleInputBoxClass])
-        this.titleInput = createElement(
-            'input',
-            this.titleInputBox,
-            {
-                type: "text",
-                name: 'Title',
-                placeholder: 'Title',
-                title: "Title"
-            },
-            [this.defaultTextClass, styles.titleInputClass]
-        )
         this.titleInput.addEventListener('change', (event, handler = this) => {
-            handler.title.innerHTML = textProcessing(event.target.value)
+            handler.titleOutput.innerHTML = textProcessing(event.target.value)
+            if (handler.titleOutput.textContent) {
+                handler.titleOutput.style.removeProperty("display");
+                return
+            }
+            handler.titleOutput.style.display= 'none';
         })
-        this.upperInfoInput = createElement(
-            'textarea',
-            this.inputBody,
-            {
-                name: 'Description',
-                placeholder: 'Description',
-                title: "Description"
-            },
-            [this.defaultRowClass, styles.upperInfoInputClass]
-        )
-        this.upperInfoInput.addEventListener('change', (event, handler = this) => {
-            handler.upperInfo.innerHTML = textProcessing(event.target.value)
+        this.descriptionInput = document.getElementById(`${this.idenifier}-input-description`)
+        this.descriptionOutput = document.getElementById(`${this.idenifier}-output-description`)
+
+        this.descriptionInput.addEventListener('change', (event, handler = this) => {
+            handler.descriptionOutput.innerHTML = textProcessing(event.target.value)
+            if (handler.descriptionOutput.textContent) {
+                handler.descriptionOutput.style.removeProperty("display");
+                return
+            }
+            handler.descriptionOutput.style.display= 'none';
         })
 
-        this.multiplierInput = createElement(
-            'input',
-            this.titleInputBox,
-            {
+        this.directionsInput = document.getElementById(`${this.idenifier}-input-directions`)
+        this.directionsOuput = document.getElementById(`${this.idenifier}-output-directions`)
 
-                name: 'Multiplier',
-                min: Number.MIN_VALUE,
-                value: 1,
-                title: "Multiplier"
-            },
-            [this.defaultNumberClass, styles.multiplierInputClass]
-        )
+        this.directionsInput.addEventListener('change', (event, handler = this) => {
+            handler.directionsOuput.innerHTML = textProcessing(event.target.value)
+            if (handler.directionsOuput.textContent) {
+                handler.directionsOuput.style.removeProperty("display");
+                return
+            }
+            handler.directionsOuput.style.display= 'none';
+        })
+
+        this.inputBox = document.getElementById(`${this.idenifier}-input-box`)
+        this.outputBox = document.getElementById(`${this.idenifier}-output-box`)
+
+        this.multiplierInput = document.getElementById(`${this.idenifier}-input-multiplier`)
         this.multiplierInput.addEventListener('change', (event, handler = this) => {
             let value = 1
             try {
@@ -357,52 +336,12 @@ export class RecipeConversion {
             }
         });
 
-        //this.inputBox = document.createElement("div");
-        this.inputBox = createElement('div', this.inputBody, {}, [this.defaultContainerClass, styles.inputBoxClass])
 
-
-        this.addItemSelection = createElement(
-            'select',
-            this.inputBody,
-            { name: "Add item selection" },
-            [this.defaultItemClass, styles.addItemSelectionClass]
-        )
-        createElement('option', this.addItemSelection,
-            {
-                value: '',
-                textContent: 'select an field to create'
-            }
-        )
-        createElement('option', this.addItemSelection,
-            {
-                value: 'field',
-                textContent: 'A standard field'
-            }
-        )
-        createElement('option', this.addItemSelection,
-            {
-                value: 'mass',
-                textContent: 'Mass conversion'
-            }
-        )
-        createElement('option', this.addItemSelection,
-            {
-                value: 'volume',
-                textContent: 'volume conversion'
-            }
-        )
-        createElement('option', this.addItemSelection,
-            {
-                value: 'all',
-                textContent: 'All conversion'
-            }
-        )
-
-
+        this.addItemSelection = document.getElementById(`${this.idenifier}-add-item`)
         this.addItemSelection.addEventListener("change", (event, handler = this) => {
             switch (event.target.value) {
                 case "field":
-                    const item = this.createItem(0)
+                    this.createItem(0)
                     break;
                 case "mass":
                     this.createItem(1, massIds, massIds)
@@ -420,31 +359,5 @@ export class RecipeConversion {
             event.target.value = "";
 
         });
-
-        this.lowerInfoInput = createElement(
-            'textarea',
-            this.inputBody,
-            {
-                name: 'Directions',
-                placeholder: 'Directions',
-                title: "Directions"
-            },
-            [this.defaultRowClass, styles.lowerInfoInputClass]
-        )
-        this.lowerInfoInput.addEventListener('change', (event, handler = this) => {
-            handler.lowerInfo.innerHTML = textProcessing(event.target.value)
-        })
-
-
-
-
-
-
-        this.outputBody = createElement('div', this.container, {}, [this.defaultBodyClass, styles.outputBodyClass])
-        this.title = createElement('p', this.outputBody, {}, [this.defaultRowClass, styles.titleClass])
-        this.upperInfo = createElement('p', this.outputBody, {}, [this.defaultRowClass, styles.upperInfoClass])
-        this.outputBox = createElement('div', this.outputBody, {}, [this.defaultContainerClass, styles.outputBoxClass])
-        this.lowerInfo = createElement('p', this.outputBody, {}, [this.defaultRowClass, styles.lowerInfoClass])
-
     }
 }

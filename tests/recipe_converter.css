@@ -1,0 +1,37 @@
+.RC_defaultBody{
+    background-color: rgb(204 227 245);
+    margin: 4px;
+}
+
+.RC_defaultRow{
+    background-color:#ddceef;
+}
+
+.recipe-converter {
+    border: 1px solid rgba(0, 0, 0, 0.666);
+}
+
+.recipe-converter .body{
+    background-color: rgb(204 227 245);
+    padding: 2px;
+}
+
+.recipe-converter .row{
+    display: block;
+    background-color: #ddceef;
+    border-radius: 12px;
+    padding: 6px;
+    margin: 4px;
+}
+
+.recipe-converter p {
+    margin: 0px;
+}
+
+.recipe-converter .value-input {
+    width: 64px;
+}
+
+.recipe-converter input {
+    width: 128px;
+}
