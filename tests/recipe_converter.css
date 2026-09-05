@@ -24,14 +24,10 @@
     margin: 4px;
 }
 
-.recipe-converter p {
-    margin: 0px;
-}
-
 .recipe-converter .value-input {
     width: 64px;
 }
 
-.recipe-converter input {
+.recipe-converter .text-input {
     width: 128px;
 }

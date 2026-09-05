@@ -117,11 +117,6 @@ export function convert(value = 1, fromId = 0, toId = 0, modifier = 1) {
                 value = metToImpMass(value)
             }
 
-            //apply density base
-            //then convert to imp IF to is imp 
-
-            console.log('NOTE: density conversion logic needed. ')
-            //may need to convert to met if imp (case 1 and 2) and then apply the desity value(gain from modifier)
         }
     }
 

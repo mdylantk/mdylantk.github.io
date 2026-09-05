@@ -1,8 +1,8 @@
 .markdown-render {
-  --md-cnt-block-bg: rgba(0, 0, 0, 0.333);
-  --md-cnt-block-color: white;
-  --md-cnt-block-border: 1px solid rgba(0, 0, 0, 0.666);
-  --md-cnt-block-tab: 4px solid rgba(0, 0, 0, 0.666);
+    --md-cnt-block-bg: rgba(0, 0, 0, 0.333);
+    --md-cnt-block-color: white;
+    --md-cnt-block-border: 1px solid rgba(0, 0, 0, 0.666);
+    --md-cnt-block-tab: 4px solid rgba(0, 0, 0, 0.666);
 }
 
 .markdown-render code {
@@ -12,6 +12,7 @@
     font-size: 0.85em;
     color: var(--md-cnt-block-color);
 }
+
 .markdown-render pre {
     background: var(--md-cnt-block-bg);
     padding: 14px 16px;
@@ -20,6 +21,7 @@
     margin: 0 0 0.9em;
     color: var(--md-cnt-block-color);
 }
+
 .markdown-render blockquote {
     margin: 0 0 0.9em;
     padding: 8px 16px;
@@ -28,6 +30,7 @@
     border-radius: 0 12px 12px 0;
     color: var(--md-cnt-block-color);
 }
+
 .markdown-render table {
     border-collapse: collapse;
     width: 100%;
@@ -38,8 +41,18 @@
     background: var(--md-cnt-block-bg);
     color: var(--md-cnt-block-color);
 }
-.markdown-render th, .markdown-render td {
+
+.markdown-render th,
+.markdown-render td {
     border: var(--md-cnt-block-border);
     padding: 6px 10px;
     font-size: 0.88em;
+}
+
+.markdown-render p {
+    margin-top: 1em;
+    margin-bottom: 1em;
+}
+.markdown-render input[type="checkbox"] {
+    margin: 0;       
 }
